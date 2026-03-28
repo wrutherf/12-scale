@@ -37,6 +37,7 @@
             </tr>
           </thead>
           <tbody>
+            <!-- Full table unchanged -->
             <tr><td>41.00</td><td>1.614</td></tr>
             <tr><td>40.95</td><td>1.612</td></tr>
             <tr><td>40.90</td><td>1.610</td></tr>
@@ -83,11 +84,7 @@
       Array.from(tireTableBody.rows).forEach(row => {
         const mm = row.cells[0].textContent.toLowerCase();
         const inch = row.cells[1].textContent.toLowerCase();
-        if (!q || mm.includes(q) || inch.includes(q)) {
-          row.style.display = "";
-        } else {
-          row.style.display = "none";
-        }
+        row.style.display = (!q || mm.includes(q) || inch.includes(q)) ? "" : "none";
       });
     });
   </script>
