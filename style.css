@@ -22,7 +22,7 @@ header h1 {
   padding: 16px;
   margin-bottom: 20px;
   border-radius: 10px;
-  width: 100%;
+  /*width: 100%; */
   max-width: 900px;   /* NEW */
   margin: 0 auto;     /* NEW */
   box-sizing: border-box;
@@ -103,7 +103,7 @@ select {
    LOCAL TABLE
 ============================ */
 #localTable {
-  width: max-content; /* table can exceed card width */
+  /*width: max-content;  table can exceed card width */
   border-collapse: collapse;
 }
 
