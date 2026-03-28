@@ -30,7 +30,6 @@ const recommendedBody = document.querySelector("#recommended tbody");
 function detectUnits(tire) {
   if (tire > 37) return "mm";
   if (tire < 2) return "in";
-
   alert("Tire diameter between 2 and 37 is ambiguous. Enter mm (>37) or inches (<2).");
   return "invalid";
 }
@@ -88,7 +87,7 @@ document.querySelectorAll("input, select").forEach(el => {
 });
 
 // ===============================
-// SCROLL-TO-ADJUST
+// SCROLL-TO-ADJUST INPUTS
 // ===============================
 function addScrollAdjust(el, step) {
   el.addEventListener("wheel", e => {
@@ -150,19 +149,25 @@ function buildLocalTable() {
 
       const cell = document.createElement("td");
       cell.textContent = formatRollout(rVal, units);
-      cell.className = legal ? "legal-gear" : "illegal-gear";
 
+      if (s === spur0 && p === pinion0) {
+        cell.className = "current-gear";
+      } else if (legal) {
+        cell.className = "legal-gear";
+      } else {
+        cell.className = "illegal-gear";
+      }
+
+      // Click to load gearing
       cell.addEventListener("click", () => {
         spurEl.value = s;
         pinionEl.value = p;
         update();
       });
 
-      cell.addEventListener("wheel", e => {
-        e.preventDefault();
-        const dir = e.deltaY < 0 ? 1 : -1;
-        pinionEl.value = p + dir;
-        update();
+      // Wheel: do nothing so scrolling only moves the table
+      cell.addEventListener("wheel", () => {
+        // intentionally empty
       });
 
       row.appendChild(cell);
@@ -184,6 +189,7 @@ function buildRecommended() {
   if (units === "invalid") return;
 
   recommendedBody.innerHTML = "";
+  if (!desired || !tire) return;
 
   const list = [];
 
