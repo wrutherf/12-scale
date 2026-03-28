@@ -191,7 +191,13 @@ select {
   font-weight: bold;
 }
 
-/* RECOMMENDED & TIRE TABLES */
+/* RECOMMENDED TABLE (no highlight) */
+#recommended tr {
+  background: #1b1b1b;
+  color: #eee;
+}
+
+/* SCROLL CONTAINERS */
 .scroll-container {
   max-height: 350px;
   overflow: auto;
@@ -212,15 +218,6 @@ select {
   padding: 6px 10px;
   border: 1px solid #333;
   text-align: center;
-}
-
-/* Legality text (if used elsewhere) */
-.good {
-  color: #00ff7f;
-}
-
-.bad {
-  color: #ff5555;
 }
 
 /* MISC */
