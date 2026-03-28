@@ -15,7 +15,7 @@
 </header>
 
 <!-- =========================
-     INPUT CARD
+     INPUT CARD + LOCAL TABLE
 ========================= -->
 <section class="card" id="inputCard">
   <h2>Inputs</h2>
@@ -46,6 +46,19 @@
       <input type="number" id="pinion" value="49">
     </label>
   </div>
+
+  <!-- Localized ±10 table lives INSIDE the input card -->
+  <h2>Local Gearing Table (±10)</h2>
+  <div class="scroll-container">
+    <table id="localTable">
+      <thead>
+        <tr>
+          <th>Spur ↓ / Pinion →</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 </section>
 
 <!-- =========================
@@ -57,24 +70,6 @@
   <div><strong>Rollout:</strong> <span id="rollout">—</span></div>
   <div><strong>Total Teeth:</strong> <span id="total">—</span></div>
   <div><strong>Legality:</strong> <span id="legal">—</span></div>
-</section>
-
-<!-- =========================
-     LOCALIZED ±10 TABLE
-========================= -->
-<section class="card" id="localCard">
-  <h2>Local Gearing Table (±10)</h2>
-
-  <div class="scroll-container">
-    <table id="localTable">
-      <thead>
-        <tr>
-          <th>Spur ↓ / Pinion →</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
 </section>
 
 <!-- =========================
