@@ -13,18 +13,30 @@ header h1 {
   margin-top: 0;
 }
 
+nav {
+  margin-top: 8px;
+}
+
+.nav-link {
+  color: #7fbfff;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.nav-link:hover {
+  text-decoration: underline;
+}
+
 /* ============================
    CARDS
 ============================ */
-
 .card {
   background: #1b1b1b;
   padding: 16px;
-  margin-bottom: 20px;
+  margin: 0 auto 20px auto;
   border-radius: 10px;
-  /*width: 100%; */
-  max-width: 900px;   /* NEW */
-  margin: 0 auto;     /* NEW */
+  width: 100%;
+  max-width: 900px;
   box-sizing: border-box;
 }
 
@@ -86,25 +98,23 @@ select {
 }
 
 /* ============================
-   LOCAL TABLE SCROLL CONTAINER
+   LOCAL TABLE CONTAINER
 ============================ */
 .local-scroll {
   width: 100%;
   max-width: 100%;
-  max-height: 350px;
-  overflow: auto;
   border: 1px solid #333;
   border-radius: 8px;
   box-sizing: border-box;
-  scroll-behavior: smooth; /* smooth correction */
+  overflow: hidden; /* no scrollbars; viewport is fixed */
 }
 
 /* ============================
    LOCAL TABLE
 ============================ */
 #localTable {
-  /*width: max-content;  table can exceed card width */
   border-collapse: collapse;
+  margin: 0 auto;
 }
 
 #localTable th,
@@ -113,6 +123,27 @@ select {
   border: 1px solid #333;
   text-align: center;
   white-space: nowrap;
+  background: #1b1b1b;
+}
+
+/* Sticky header row */
+#localTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+/* Sticky left column */
+#localTable td:first-child,
+#localTable th.sticky-corner {
+  position: sticky;
+  left: 0;
+  z-index: 15;
+}
+
+/* Top-left corner cell */
+#localTable th.sticky-corner {
+  z-index: 30;
 }
 
 /* ============================
@@ -134,6 +165,12 @@ select {
   color: #666;
 }
 
+/* Cursor cell (preview) */
+.cursor-cell {
+  outline: 2px solid #00aaff;
+  outline-offset: -2px;
+}
+
 /* ============================
    ROLLOUT DISPLAY
 ============================ */
@@ -153,15 +190,20 @@ select {
 .scroll-container {
   max-height: 350px;
   overflow: auto;
+  border: 1px solid #333;
+  border-radius: 8px;
 }
 
-#recommended {
+#recommended,
+#tireTable {
   width: 100%;
   border-collapse: collapse;
 }
 
 #recommended th,
-#recommended td {
+#recommended td,
+#tireTable th,
+#tireTable td {
   padding: 6px 10px;
   border: 1px solid #333;
   text-align: center;
@@ -174,4 +216,13 @@ select {
 
 .bad {
   color: #ff5555;
+}
+
+/* ============================
+   MISC
+============================ */
+.hint {
+  font-size: 0.8rem;
+  color: #aaa;
+  margin-top: 8px;
 }
