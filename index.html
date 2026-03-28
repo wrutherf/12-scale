@@ -4,9 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rollout Calculator</title>
+
+  <!-- Favicon + Styles -->
   <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
 
 <header>
@@ -14,55 +17,74 @@
   <h1>Rollout Calculator</h1>
 </header>
 
+<!-- =========================
+     INPUT SECTION
+========================= -->
 <section class="card">
-  <label>
-    Car:
-    <select id="car">
-      <option value="a12">Awesomatix A12</option>
-      <option value="a12x">Awesomatix A12X</option>
-    </select>
-  </label>
+  <div class="input-row">
+    <label>
+      Car
+      <select id="car">
+        <option value="a12">Awesomatix A12</option>
+        <option value="a12x">Awesomatix A12X</option>
+      </select>
+    </label>
 
-  <label>
-    Tire Diameter (mm):
-    <input type="number" id="tire" value="40" step="0.1">
-  </label>
+    <label>
+      Tire Diameter (mm)
+      <input type="number" id="tire" value="40" step="0.1">
+    </label>
+  </div>
 
-  <label>
-    Spur Teeth:
-    <input type="number" id="spur" value="65">
-  </label>
+  <div class="input-row">
+    <label>
+      Spur Teeth
+      <input type="number" id="spur" value="65">
+    </label>
 
-  <label>
-    Pinion Teeth:
-    <input type="number" id="pinion" value="49">
-  </label>
+    <label>
+      Pinion Teeth
+      <input type="number" id="pinion" value="49">
+    </label>
+  </div>
 </section>
 
+<!-- =========================
+     OUTPUT SECTION
+========================= -->
 <section class="card output">
   <div><strong>Rollout:</strong> <span id="rollout">—</span> mm/rev</div>
   <div><strong>Total Teeth:</strong> <span id="total">—</span></div>
   <div><strong>Legality:</strong> <span id="legal">—</span></div>
 </section>
 
+<!-- =========================
+     TARGET ROLLOUT FINDER
+========================= -->
 <section class="card">
   <h2>Find Gear for Target Rollout</h2>
 
-  <label>
-    Target Rollout (mm/rev):
-    <input type="number" id="target" value="90" step="0.1">
-  </label>
+  <div class="input-row">
+    <label>
+      Target Rollout (mm/rev)
+      <input type="number" id="target" value="90" step="0.1">
+    </label>
 
-  <label>
-    Tolerance (%):
-    <input type="number" id="tolerance" value="1" step="0.1">
-  </label>
+    <label>
+      Tolerance (%)
+      <input type="number" id="tolerance" value="1" step="0.1">
+    </label>
+  </div>
 
   <button id="find">Find Matching Gears</button>
 </section>
 
+<!-- =========================
+     RESULTS TABLE
+========================= -->
 <section class="card">
   <h2>Suggested Gear Pairs</h2>
+
   <table id="results">
     <thead>
       <tr>
@@ -77,6 +99,10 @@
   </table>
 </section>
 
+<!-- =========================
+     SCRIPT
+========================= -->
 <script src="script.js"></script>
+
 </body>
 </html>
