@@ -1,123 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>Rollout Calculator</title>
-
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+  <header>
+    <h1>Rollout Calculator</h1>
+    <nav>
+      <a href="tires.html" class="nav-link">Tire Size Chart</a>
+    </nav>
+  </header>
 
-<header>
-  <h1>Rollout Calculator</h1>
-</header>
+  <main>
+    <!-- INPUT CARD -->
+    <section class="card">
+      <h2>Inputs</h2>
+      <div class="input-row">
+        <label>
+          Spur
+          <input type="number" id="spur" value="80">
+        </label>
+        <label>
+          Pinion
+          <input type="number" id="pinion" value="40">
+        </label>
+      </div>
+      <div class="input-row">
+        <label>
+          Tire Diameter
+          <input type="number" id="tire" value="40.00" step="0.01">
+          <div id="tireConverted" class="converted"></div>
+        </label>
+        <label>
+          Car
+          <select id="car">
+            <option value="a12">A12</option>
+            <option value="a12x">A12X</option>
+          </select>
+        </label>
+      </div>
+      <div class="input-row">
+        <label>
+          Desired Rollout
+          <input type="number" id="desiredRollout" step="0.01">
+        </label>
+      </div>
+    </section>
 
-<!-- =========================
-     INPUT CARD + LOCAL TABLE
-========================= -->
-<section class="card" id="inputCard">
-  <h2>Inputs</h2>
+    <!-- ROLLOUT CARD -->
+    <section class="card">
+      <h2>Rollout & Legality</h2>
+      <div id="rolloutPrimary"></div>
+      <div id="rolloutSecondary"></div>
+      <p>Total: <span id="total"></span></p>
+      <p>Legal: <span id="legal"></span></p>
+    </section>
 
-  <div class="input-row">
-    <label>
-      Car
-      <select id="car">
-        <option value="a12">Awesomatix A12</option>
-        <option value="a12x">Awesomatix A12X</option>
-      </select>
-    </label>
+    <!-- LOCAL TABLE CARD -->
+    <section class="card">
+      <div class="local-header">
+        <h2>Local Gearing Map (Cursor‑Centered)</h2>
+        <button id="centerBtn" class="center-btn">Center on Current Gearing</button>
+      </div>
+      <div class="local-scroll">
+        <table id="localTable">
+          <thead>
+            <tr id="localHeadRow">
+              <th class="sticky-corner">Spur ↓ / Pinion →</th>
+            </tr>
+          </thead>
+          <tbody id="localBody"></tbody>
+        </table>
+      </div>
+      <p class="hint">Use arrow keys to move the cursor. Press Enter or click a cell to commit gearing.</p>
+    </section>
 
-    <label>
-      Tire Diameter
-      <input type="number" id="tire" value="40" step="0.1">
-      <div id="tireConverted" class="converted"></div>
-    </label>
-  </div>
+    <!-- RECOMMENDED CARD -->
+    <section class="card">
+      <h2>Recommended Gearing (Closest to Desired Rollout)</h2>
+      <div class="scroll-container">
+        <table id="recommended">
+          <thead>
+            <tr>
+              <th>Spur</th>
+              <th>Pinion</th>
+              <th>Total</th>
+              <th>Rollout</th>
+              <th>Δ to Desired</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
 
-  <div class="input-row">
-    <label>
-      Spur Teeth
-      <input type="number" id="spur" value="65">
-    </label>
-
-    <label>
-      Pinion Teeth
-      <input type="number" id="pinion" value="49">
-    </label>
-  </div>
-
-  <h2 class="local-header">
-    <span>Local Gearing Table (±5)</span>
-    <button id="centerBtn" class="center-btn">🎯 Center</button>
-  </h2>
-
-  <div id="localScroll" class="local-scroll">
-    <table id="localTable">
-      <thead>
-        <tr id="localHeadRow">
-          <th>Spur ↓ / Pinion →</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</section>
-
-<!-- =========================
-     ROLLOUT SUMMARY
-========================= -->
-<section class="card">
-  <h2>Current Rollout</h2>
-
-  <div>
-    <strong>Rollout:</strong>
-    <div id="rolloutPrimary">—</div>
-    <div id="rolloutSecondary" class="converted"></div>
-  </div>
-
-  <div><strong>Total Teeth:</strong> <span id="total">—</span></div>
-  <div><strong>Legality:</strong> <span id="legal">—</span></div>
-</section>
-
-<!-- =========================
-     DESIRED ROLLOUT
-========================= -->
-<section class="card">
-  <h2>Desired Rollout</h2>
-
-  <div class="input-row">
-    <label>
-      Desired Rollout
-      <input type="number" id="desiredRollout" value="90" step="0.01">
-    </label>
-  </div>
-</section>
-
-<!-- =========================
-     RECOMMENDED GEARING
-========================= -->
-<section class="card">
-  <h2>Recommended Gearing (Closest to Desired)</h2>
-
-  <div class="scroll-container">
-    <table id="recommended">
-      <thead>
-        <tr>
-          <th>Spur</th>
-          <th>Pinion</th>
-          <th>Total</th>
-          <th>Rollout</th>
-          <th>Diff</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</section>
-
-<script src="script.js"></script>
-
+  <script src="script.js"></script>
 </body>
 </html>
