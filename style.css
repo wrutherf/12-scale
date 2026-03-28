@@ -1,6 +1,4 @@
-/* ============================
-   GLOBAL
-============================ */
+/* GLOBAL */
 body {
   background: #111;
   color: #eee;
@@ -10,7 +8,11 @@ body {
 }
 
 header h1 {
-  margin-top: 0;
+  margin: 0;
+}
+
+header {
+  margin-bottom: 16px;
 }
 
 nav {
@@ -27,9 +29,7 @@ nav {
   text-decoration: underline;
 }
 
-/* ============================
-   CARDS
-============================ */
+/* CARDS */
 .card {
   background: #1b1b1b;
   padding: 16px;
@@ -62,18 +62,14 @@ select {
   border-radius: 6px;
 }
 
-/* ============================
-   CONVERTED UNIT TEXT
-============================ */
+/* CONVERTED UNIT TEXT */
 .converted {
   font-size: 0.85rem;
   color: #bbb;
   margin-top: 4px;
 }
 
-/* ============================
-   LOCAL TABLE HEADER + CENTER BUTTON
-============================ */
+/* LOCAL TABLE HEADER + CENTER BUTTON */
 .local-header {
   display: flex;
   justify-content: space-between;
@@ -97,21 +93,17 @@ select {
   background: #444;
 }
 
-/* ============================
-   LOCAL TABLE CONTAINER
-============================ */
+/* LOCAL TABLE CONTAINER */
 .local-scroll {
   width: 100%;
   max-width: 100%;
   border: 1px solid #333;
   border-radius: 8px;
   box-sizing: border-box;
-  overflow: hidden; /* no scrollbars; viewport is fixed */
+  overflow: hidden;
 }
 
-/* ============================
-   LOCAL TABLE
-============================ */
+/* LOCAL TABLE */
 #localTable {
   border-collapse: collapse;
   margin: 0 auto;
@@ -146,9 +138,7 @@ select {
   z-index: 30;
 }
 
-/* ============================
-   COLOR CODING
-============================ */
+/* COLOR CODING */
 .current-gear {
   background: #00ff00 !important;
   color: #000 !important;
@@ -171,9 +161,14 @@ select {
   outline-offset: -2px;
 }
 
-/* ============================
-   ROLLOUT DISPLAY
-============================ */
+/* Header highlight for selected spur/pinion */
+.header-highlight {
+  background: #2d5f2d !important;
+  color: #d8ffd8 !important;
+  font-weight: bold;
+}
+
+/* ROLLOUT DISPLAY */
 #rolloutPrimary {
   font-size: 1.1rem;
   margin-bottom: 2px;
@@ -184,9 +179,7 @@ select {
   color: #bbb;
 }
 
-/* ============================
-   RECOMMENDED TABLE
-============================ */
+/* RECOMMENDED & TIRE TABLES */
 .scroll-container {
   max-height: 350px;
   overflow: auto;
@@ -218,11 +211,18 @@ select {
   color: #ff5555;
 }
 
-/* ============================
-   MISC
-============================ */
+/* MISC */
 .hint {
   font-size: 0.8rem;
   color: #aaa;
   margin-top: 8px;
+}
+
+/* TIRE PAGE SEARCH */
+.tire-search {
+  margin-bottom: 10px;
+}
+
+.tire-search input {
+  width: 200px;
 }
