@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rollout Calculator</title>
 
-  <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="stylesheet" href="style.css" />
 </head>
 
@@ -17,7 +16,7 @@
 </header>
 
 <!-- =========================
-     INPUT SECTION (Example Style)
+     INPUT SECTION
 ========================= -->
 <section class="card">
   <h2>Car & Gear Inputs</h2>
@@ -32,7 +31,7 @@
     </label>
 
     <label>
-      Tire Diameter (mm)
+      Tire Diameter
       <input type="number" id="tire" value="40" step="0.1">
     </label>
   </div>
@@ -59,6 +58,24 @@
   <div><strong>Rollout:</strong> <span id="rollout">—</span> mm/rev</div>
   <div><strong>Total Teeth:</strong> <span id="total">—</span></div>
   <div><strong>Legality:</strong> <span id="legal">—</span></div>
+</section>
+
+<!-- =========================
+     FULL GEARING TABLE
+========================= -->
+<section class="card">
+  <h2>Full Gearing / Rollout Table</h2>
+
+  <div class="scroll-container">
+    <table id="fullTable">
+      <thead>
+        <tr>
+          <th>Spur ↓ / Pinion →</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 </section>
 
 <!-- =========================
@@ -103,7 +120,7 @@
 </section>
 
 <!-- =========================
-     RECOMMENDED GEARS (Sorted High → Low)
+     RECOMMENDED GEARS
 ========================= -->
 <section class="card">
   <h2>Recommended Gearing (High → Low Rollout)</h2>
