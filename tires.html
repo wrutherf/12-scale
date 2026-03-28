@@ -16,6 +16,18 @@
   <main>
     <section class="card">
       <h2>41.00 mm → 39.50 mm (0.05 mm steps)</h2>
+      <p class="hint">
+        This chart covers a typical usable 1/12 foam rear tire range. Values are shown in millimeters and inches,
+        descending from 41.00 mm to 39.50 mm in 0.05 mm steps.
+      </p>
+
+      <div class="tire-search">
+        <label>
+          Filter by diameter
+          <input type="text" id="tireFilter" placeholder="e.g. 40.3">
+        </label>
+      </div>
+
       <div class="scroll-container">
         <table id="tireTable">
           <thead>
@@ -25,7 +37,6 @@
             </tr>
           </thead>
           <tbody>
-            <!-- 41.00 → 39.50 mm, 0.05 mm steps -->
             <tr><td>41.00</td><td>1.614</td></tr>
             <tr><td>40.95</td><td>1.612</td></tr>
             <tr><td>40.90</td><td>1.610</td></tr>
@@ -62,5 +73,23 @@
       </div>
     </section>
   </main>
+
+  <script>
+    const tireFilter = document.getElementById("tireFilter");
+    const tireTableBody = document.querySelector("#tireTable tbody");
+
+    tireFilter.addEventListener("input", () => {
+      const q = tireFilter.value.trim().toLowerCase();
+      Array.from(tireTableBody.rows).forEach(row => {
+        const mm = row.cells[0].textContent.toLowerCase();
+        const inch = row.cells[1].textContent.toLowerCase();
+        if (!q || mm.includes(q) || inch.includes(q)) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      });
+    });
+  </script>
 </body>
 </html>
