@@ -18,25 +18,62 @@ const rolloutEl = document.getElementById("rollout");
 const totalEl = document.getElementById("total");
 const legalEl = document.getElementById("legal");
 
-const resultsBody = document.querySelector("#results tbody");
+const localBody = document.querySelector("#localTable tbody");
+const localHeadRow = document.querySelector("#localTable thead tr");
 const recommendedBody = document.querySelector("#recommended tbody");
+const desiredRolloutEl = document.getElementById("desiredRollout");
 
 // ===============================
-// UPDATE CALCULATION
+// UNIT DETECTION & ROLLOUT
+// ===============================
+function detectUnits(tire) {
+  if (tire > 37) return "mm";
+  if (tire < 2) return "in";
+  alert("Tire diameter is between 2 and 37. Please enter mm (>37) or inches (<2).");
+  return "invalid";
+}
+
+function rolloutFromGears(spur, pinion, tire) {
+  const units = detectUnits(tire);
+  if (units === "invalid") return { value: NaN, units };
+
+  let tireMm = tire;
+  if (units === "in") {
+    tireMm = tire * 25.4;
+  }
+
+  const ratio = pinion / spur;
+  const rolloutMm = Math.PI * tireMm * ratio;
+
+  if (units === "mm") {
+    return { value: rolloutMm, units };
+  } else {
+    return { value: rolloutMm / 25.4, units };
+  }
+}
+
+function formatRollout(rollout, units) {
+  if (!isFinite(rollout)) return "—";
+  if (units === "mm") return rollout.toFixed(2) + " mm";
+  if (units === "in") return rollout.toFixed(3) + " in";
+  return "—";
+}
+
+// ===============================
+// MAIN UPDATE
 // ===============================
 function update() {
-  const spur = parseFloat(spurEl.value);
-  const pinion = parseFloat(pinionEl.value);
+  const spur = parseInt(spurEl.value, 10);
+  const pinion = parseInt(pinionEl.value, 10);
   const tire = parseFloat(tireEl.value);
   const car = cars[carEl.value];
 
   if (!spur || !pinion || !tire) return;
 
-  const ratio = pinion / spur;
-  const rollout = Math.PI * tire * ratio;
+  const { value: rolloutVal, units } = rolloutFromGears(spur, pinion, tire);
   const total = spur + pinion;
 
-  rolloutEl.textContent = rollout.toFixed(2);
+  rolloutEl.textContent = formatRollout(rolloutVal, units);
   totalEl.textContent = total;
 
   if (total >= car.min && total <= car.max) {
@@ -47,15 +84,13 @@ function update() {
     legalEl.className = "bad";
   }
 
-  buildFullTable();
+  buildLocalTable();
   buildRecommended();
 }
 
 document.querySelectorAll("input, select").forEach(el => {
   el.addEventListener("input", update);
 });
-
-update();
 
 // ===============================
 // SCROLL-TO-ADJUST INPUTS
@@ -64,7 +99,7 @@ function addScrollAdjust(el, step) {
   el.addEventListener("wheel", (e) => {
     e.preventDefault();
     const dir = e.deltaY < 0 ? 1 : -1;
-    el.value = (parseFloat(el.value) + step * dir).toFixed(3);
+    el.value = (parseFloat(el.value) + step * dir).toFixed(0);
     update();
   });
 }
@@ -75,128 +110,137 @@ addScrollAdjust(pinionEl, 1);
 tireEl.addEventListener("wheel", (e) => {
   e.preventDefault();
   const val = parseFloat(tireEl.value);
-  const isImperial = val < 5;
-  const step = isImperial ? 0.005 : 0.05;
+  const units = detectUnits(val);
+  if (units === "invalid") return;
+  const step = units === "mm" ? 0.05 : 0.005;
   const dir = e.deltaY < 0 ? 1 : -1;
   tireEl.value = (val + step * dir).toFixed(3);
   update();
 });
 
 // ===============================
-// FULL GEARING TABLE
+// LOCALIZED ±6 GEARING TABLE
 // ===============================
-function buildFullTable() {
+function buildLocalTable() {
+  const spur0 = parseInt(spurEl.value, 10);
+  const pinion0 = parseInt(pinionEl.value, 10);
   const tire = parseFloat(tireEl.value);
   const car = cars[carEl.value];
 
-  const tbody = document.querySelector("#fullTable tbody");
-  const thead = document.querySelector("#fullTable thead tr");
+  if (!spur0 || !pinion0 || !tire) return;
 
-  tbody.innerHTML = "";
-  thead.innerHTML = `<th>Spur ↓ / Pinion →</th>`;
-
-  for (let pinion = 30; pinion <= 60; pinion++) {
-    thead.innerHTML += `<th>${pinion}</th>`;
+  const units = detectUnits(tire);
+  if (units === "invalid") {
+    localBody.innerHTML = "";
+    localHeadRow.innerHTML = `<th>Spur ↓ / Pinion →</th>`;
+    return;
   }
 
-  for (let spur = 50; spur <= 80; spur++) {
-    const row = document.createElement("tr");
-    row.innerHTML = `<td><strong>${spur}</strong></td>`;
+  const spurMin = Math.max(1, spur0 - 6);
+  const spurMax = spur0 + 6;
+  const pinionMin = Math.max(1, pinion0 - 6);
+  const pinionMax = pinion0 + 6;
 
-    for (let pinion = 30; pinion <= 60; pinion++) {
-      const total = spur + pinion;
-      const rollout = Math.PI * tire * (pinion / spur);
+  localBody.innerHTML = "";
+  localHeadRow.innerHTML = `<th>Spur ↓ / Pinion →</th>`;
+
+  for (let p = pinionMin; p <= pinionMax; p++) {
+    localHeadRow.innerHTML += `<th>${p}</th>`;
+  }
+
+  for (let s = spurMin; s <= spurMax; s++) {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td><strong>${s}</strong></td>`;
+
+    for (let p = pinionMin; p <= pinionMax; p++) {
+      const total = s + p;
+      const { value: rVal } = rolloutFromGears(s, p, tire);
       const legal = total >= car.min && total <= car.max;
 
-      row.innerHTML += `
-        <td class="${legal ? 'legal-gear' : 'illegal-gear'}">
-          ${rollout.toFixed(1)}
-        </td>
-      `;
+      const cell = document.createElement("td");
+      cell.textContent = formatRollout(rVal, units);
+      cell.className = legal ? "legal-gear" : "illegal-gear";
+      cell.dataset.spur = s;
+      cell.dataset.pinion = p;
+
+      cell.addEventListener("click", () => {
+        spurEl.value = s;
+        pinionEl.value = p;
+        update();
+      });
+
+      cell.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const dir = e.deltaY < 0 ? 1 : -1;
+        const newPinion = p + dir;
+        pinionEl.value = newPinion;
+        update();
+      });
+
+      row.appendChild(cell);
     }
 
-    tbody.appendChild(row);
+    localBody.appendChild(row);
   }
 }
 
 // ===============================
-// TARGET MATCH FINDER
-// ===============================
-function findMatches() {
-  const target = parseFloat(document.getElementById("target").value);
-  const tolerance = parseFloat(document.getElementById("tolerance").value);
-  const tire = parseFloat(tireEl.value);
-  const car = cars[carEl.value];
-
-  resultsBody.innerHTML = "";
-
-  const matches = [];
-
-  for (let spur = 50; spur <= 80; spur++) {
-    for (let pinion = 30; pinion <= 60; pinion++) {
-      const total = spur + pinion;
-      if (total < car.min || total > car.max) continue;
-
-      const rollout = Math.PI * tire * (pinion / spur);
-      const diffPct = Math.abs((rollout - target) / target) * 100;
-
-      if (diffPct <= tolerance) {
-        matches.push({ spur, pinion, total, rollout, diffPct });
-      }
-    }
-  }
-
-  matches.sort((a, b) => a.diffPct - b.diffPct);
-
-  matches.forEach(m => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${m.spur}</td>
-      <td>${m.pinion}</td>
-      <td>${m.total}</td>
-      <td>${m.rollout.toFixed(2)}</td>
-      <td>${m.diffPct.toFixed(2)}%</td>
-    `;
-    resultsBody.appendChild(row);
-  });
-}
-
-document.getElementById("find").addEventListener("click", findMatches);
-
-// ===============================
-// RECOMMENDED GEARS (HIGH → LOW)
+// RECOMMENDED GEARING TABLE
 // ===============================
 function buildRecommended() {
+  const desired = parseFloat(desiredRolloutEl.value);
   const tire = parseFloat(tireEl.value);
   const car = cars[carEl.value];
-
-  const list = [];
-
-  for (let spur = 50; spur <= 80; spur++) {
-    for (let pinion = 30; pinion <= 60; pinion++) {
-      const total = spur + pinion;
-      if (total < car.min || total > car.max) continue;
-
-      const rollout = Math.PI * tire * (pinion / spur);
-      list.push({ spur, pinion, total, rollout });
-    }
-  }
-
-  list.sort((a, b) => b.rollout - a.rollout);
 
   recommendedBody.innerHTML = "";
 
-  list.forEach(m => {
+  if (!desired || !tire) return;
+
+  const units = detectUnits(tire);
+  if (units === "invalid") return;
+
+  const list = [];
+
+  for (let spur = 40; spur <= 80; spur++) {
+    for (let pinion = 20; pinion <= 70; pinion++) {
+      const total = spur + pinion;
+      if (total < car.min || total > car.max) continue;
+
+      const { value: rVal } = rolloutFromGears(spur, pinion, tire);
+      const diff = Math.abs(rVal - desired);
+
+      list.push({ spur, pinion, total, rollout: rVal, diff });
+    }
+  }
+
+  list.sort((a, b) => a.diff - b.diff);
+
+  const maxRows = 40;
+  list.slice(0, maxRows).forEach(m => {
     const row = document.createElement("tr");
+    row.className = "legal-gear";
+
     row.innerHTML = `
       <td>${m.spur}</td>
       <td>${m.pinion}</td>
       <td>${m.total}</td>
-      <td>${m.rollout.toFixed(2)}</td>
+      <td>${formatRollout(m.rollout, units)}</td>
+      <td>${m.diff.toFixed(units === "mm" ? 2 : 3)}</td>
     `;
+
+    row.addEventListener("click", () => {
+      spurEl.value = m.spur;
+      pinionEl.value = m.pinion;
+      update();
+    });
+
     recommendedBody.appendChild(row);
   });
 }
 
-buildFullTable();
-buildRecommended();
+desiredRolloutEl.addEventListener("input", buildRecommended);
+
+// ===============================
+// INITIALIZE
+// ===============================
+update();
