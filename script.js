@@ -20,9 +20,12 @@ const pinionEl = document.getElementById("pinion");
 const tireEl = document.getElementById("tire");
 const carEl = document.getElementById("car");
 
-const rolloutEl = document.getElementById("rollout");
+const rolloutPrimary = document.getElementById("rolloutPrimary");
+const rolloutSecondary = document.getElementById("rolloutSecondary");
 const totalEl = document.getElementById("total");
 const legalEl = document.getElementById("legal");
+
+const tireConverted = document.getElementById("tireConverted");
 
 const localScroll = document.getElementById("localScroll");
 const localBody = document.querySelector("#localTable tbody");
@@ -64,15 +67,55 @@ function rolloutFromGears(spur, pinion, tire) {
   return { value: rolloutMm / 25.4, units };
 }
 
-function formatRollout(val, units) {
-  if (!isFinite(val)) return "—";
-  return units === "mm" ? val.toFixed(2) : val.toFixed(3);
+function updateRolloutDualUnits(value, units) {
+  if (!isFinite(value)) {
+    rolloutPrimary.textContent = "—";
+    rolloutSecondary.textContent = "";
+    return;
+  }
+
+  if (units === "mm") {
+    const inches = value / 25.4;
+    rolloutPrimary.textContent = `${value.toFixed(2)} mm`;
+    rolloutSecondary.textContent = `${inches.toFixed(3)} in`;
+  } else {
+    const mm = value * 25.4;
+    rolloutPrimary.textContent = `${value.toFixed(3)} in`;
+    rolloutSecondary.textContent = `${mm.toFixed(2)} mm`;
+  }
+}
+
+// ===============================
+// TIRE DUAL-UNIT DISPLAY
+// ===============================
+function updateTireConversion() {
+  const val = parseFloat(tireEl.value);
+  if (!val || val <= 0) {
+    tireConverted.textContent = "";
+    return;
+  }
+
+  const units = detectUnits(val);
+  if (units === "invalid") {
+    tireConverted.textContent = "";
+    return;
+  }
+
+  if (units === "mm") {
+    const inches = val / 25.4;
+    tireConverted.textContent = `${inches.toFixed(3)} in`;
+  } else {
+    const mm = val * 25.4;
+    tireConverted.textContent = `${mm.toFixed(2)} mm`;
+  }
 }
 
 // ===============================
 // MAIN UPDATE
 // ===============================
 function update() {
+  updateTireConversion();
+
   const spur = parseInt(spurEl.value, 10);
   const pinion = parseInt(pinionEl.value, 10);
   const tire = parseFloat(tireEl.value);
@@ -81,7 +124,7 @@ function update() {
   const { value: rVal, units } = rolloutFromGears(spur, pinion, tire);
   const total = spur + pinion;
 
-  rolloutEl.textContent = formatRollout(rVal, units);
+  updateRolloutDualUnits(rVal, units);
   totalEl.textContent = total;
 
   if (total >= car.min && total <= car.max) {
@@ -135,8 +178,6 @@ function resetLocalTableCenter() {
   const spur0 = parseInt(spurEl.value, 10);
   const pinion0 = parseInt(pinionEl.value, 10);
 
-  if (!spur0 || !pinion0) return;
-
   spurMin = Math.max(SPUR_MIN_SOFT, spur0 - 5);
   spurMax = Math.min(SPUR_MAX_SOFT, spur0 + 5);
   pinionMin = Math.max(PINION_MIN_SOFT, pinion0 - 5);
@@ -147,7 +188,6 @@ function resetLocalTableCenter() {
 }
 
 function centerLocalScroll() {
-  // Rough center of the content
   localScroll.scrollTop = (localScroll.scrollHeight - localScroll.clientHeight) / 2;
   localScroll.scrollLeft = (localScroll.scrollWidth - localScroll.clientWidth) / 2;
 }
@@ -159,11 +199,7 @@ function buildLocalTable() {
   const car = cars[carEl.value];
 
   const units = detectUnits(tire);
-  if (units === "invalid" || !spur0 || !pinion0 || !tire) {
-    localBody.innerHTML = "";
-    localHeadRow.innerHTML = `<th>Spur ↓ / Pinion →</th>`;
-    return;
-  }
+  if (units === "invalid") return;
 
   // Header
   localHeadRow.innerHTML = `<th>Spur ↓ / Pinion →</th>`;
@@ -187,7 +223,9 @@ function buildLocalTable() {
       const legal = total >= car.min && total <= car.max;
 
       const cell = document.createElement("td");
-      cell.textContent = formatRollout(rVal, units);
+      cell.textContent = units === "mm"
+        ? rVal.toFixed(2)
+        : rVal.toFixed(3);
 
       if (s === spur0 && p === pinion0) {
         cell.className = "current-gear";
@@ -202,9 +240,6 @@ function buildLocalTable() {
         pinionEl.value = p;
         update();
       });
-
-      // Do NOT change inputs on wheel; allow natural scroll
-      cell.addEventListener("wheel", () => {});
 
       row.appendChild(cell);
     }
@@ -224,29 +259,29 @@ localScroll.addEventListener("scroll", () => {
 
   // Vertical: up
   if (localScroll.scrollTop < threshold && spurMin > SPUR_MIN_SOFT) {
-    spurMin = Math.max(SPUR_MIN_SOFT, spurMin - 1);
-    spurMax = spurMin + 10;
+    spurMin--;
+    spurMax--;
     changed = true;
   }
 
   // Vertical: down
   if (localScroll.scrollTop > maxV - threshold && spurMax < SPUR_MAX_SOFT) {
-    spurMax = Math.min(SPUR_MAX_SOFT, spurMax + 1);
-    spurMin = spurMax - 10;
+    spurMin++;
+    spurMax++;
     changed = true;
   }
 
   // Horizontal: left
   if (localScroll.scrollLeft < threshold && pinionMin > PINION_MIN_SOFT) {
-    pinionMin = Math.max(PINION_MIN_SOFT, pinionMin - 1);
-    pinionMax = pinionMin + 10;
+    pinionMin--;
+    pinionMax--;
     changed = true;
   }
 
   // Horizontal: right
   if (localScroll.scrollLeft > maxH - threshold && pinionMax < PINION_MAX_SOFT) {
-    pinionMax = Math.min(PINION_MAX_SOFT, pinionMax + 1);
-    pinionMin = pinionMax - 10;
+    pinionMin++;
+    pinionMax++;
     changed = true;
   }
 
@@ -256,7 +291,7 @@ localScroll.addEventListener("scroll", () => {
 
     buildLocalTable();
 
-    // Keep it feeling stable: nudge back toward center
+    // Smooth correction
     localScroll.scrollTop = prevTop + (localScroll.scrollHeight - localScroll.clientHeight) / 22;
     localScroll.scrollLeft = prevLeft + (localScroll.scrollWidth - localScroll.clientWidth) / 22;
   }
@@ -306,7 +341,7 @@ function buildRecommended() {
       <td>${m.s}</td>
       <td>${m.p}</td>
       <td>${m.total}</td>
-      <td>${formatRollout(m.rVal, units)}</td>
+      <td>${units === "mm" ? m.rVal.toFixed(2) : m.rVal.toFixed(3)}</td>
       <td>${m.diff.toFixed(units === "mm" ? 2 : 3)}</td>
     `;
 
