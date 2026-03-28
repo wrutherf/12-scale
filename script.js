@@ -289,17 +289,27 @@ centerBtn.addEventListener("click", () => {
   buildLocalTable();
 });
 
+
+
+
 // RECOMMENDED GEARING
 function buildRecommended() {
-  const desired = parseFloat(desiredRolloutEl.value);
+  const desiredRaw = parseFloat(desiredRolloutEl.value);
   const tire = parseFloat(tireEl.value);
   const car = cars[carEl.value];
 
-  const units = detectUnits(tire);
-  if (units === "invalid" || !desired || !tire) {
+  if (!desiredRaw || !tire) {
     recommendedBody.innerHTML = "";
     return;
   }
+
+  // Determine desired rollout units
+  const desiredUnits = desiredRaw < 10 ? "in" : "mm";
+  const desired = desiredRaw;
+
+  // Determine tire units
+  const tireUnits = detectUnits(tire);
+  if (tireUnits === "invalid") return;
 
   recommendedBody.innerHTML = "";
   const list = [];
@@ -310,21 +320,34 @@ function buildRecommended() {
       if (total < car.min || total > car.max) continue;
 
       const { value: rVal, units: rUnits } = rolloutFromGears(s, p, tire);
-      let rolloutVal = rVal;
-      if (rUnits === "mm" && units === "in") {
-        rolloutVal = rVal / 25.4;
-      } else if (rUnits === "in" && units === "mm") {
-        rolloutVal = rVal * 25.4;
+
+      // Convert rollout to same units as desired
+      let rolloutConverted;
+      if (desiredUnits === rUnits) {
+        rolloutConverted = rVal;
+      } else if (desiredUnits === "mm" && rUnits === "in") {
+        rolloutConverted = rVal * 25.4;
+      } else if (desiredUnits === "in" && rUnits === "mm") {
+        rolloutConverted = rVal / 25.4;
       }
 
-      const diff = Math.abs(rolloutVal - desired);
+      const diff = Math.abs(rolloutConverted - desired);
 
-      list.push({ s, p, total, rVal: rolloutVal, diff });
+      list.push({
+        s,
+        p,
+        total,
+        rollout: rolloutConverted,
+        diff
+      });
     }
   }
 
+  // Sort by closeness
   list.sort((a, b) => a.diff - b.diff);
 
+  // Render top 40
+  recommendedBody.innerHTML = "";
   list.slice(0, 40).forEach(m => {
     const row = document.createElement("tr");
     row.className = "legal-gear";
@@ -333,8 +356,8 @@ function buildRecommended() {
       <td>${m.s}</td>
       <td>${m.p}</td>
       <td>${m.total}</td>
-      <td>${units === "mm" ? m.rVal.toFixed(2) : m.rVal.toFixed(3)}</td>
-      <td>${m.diff.toFixed(units === "mm" ? 2 : 3)}</td>
+      <td>${desiredUnits === "mm" ? m.rollout.toFixed(2) : m.rollout.toFixed(3)}</td>
+      <td>${m.diff.toFixed(desiredUnits === "mm" ? 2 : 3)}</td>
     `;
 
     row.addEventListener("click", () => {
@@ -348,6 +371,7 @@ function buildRecommended() {
     recommendedBody.appendChild(row);
   });
 }
+
 
 desiredRolloutEl.addEventListener("input", buildRecommended);
 
