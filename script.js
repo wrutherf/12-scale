@@ -6,11 +6,14 @@ const cars = {
   a12x: { min: 112, max: 125 }
 };
 
-// Soft limits for virtual table
+// Soft limits for virtual map
 const SPUR_MIN_SOFT = 20;
 const SPUR_MAX_SOFT = 120;
 const PINION_MIN_SOFT = 10;
 const PINION_MAX_SOFT = 80;
+
+// Viewport half-span (±5)
+const SPAN = 5;
 
 // ===============================
 // ELEMENTS
@@ -27,19 +30,16 @@ const legalEl = document.getElementById("legal");
 
 const tireConverted = document.getElementById("tireConverted");
 
-const localScroll = document.getElementById("localScroll");
-const localBody = document.querySelector("#localTable tbody");
+const localBody = document.getElementById("localBody");
 const localHeadRow = document.getElementById("localHeadRow");
 
 const desiredRolloutEl = document.getElementById("desiredRollout");
 const recommendedBody = document.querySelector("#recommended tbody");
 const centerBtn = document.getElementById("centerBtn");
 
-// Virtual table state
-let spurMin = null;
-let spurMax = null;
-let pinionMin = null;
-let pinionMax = null;
+// Cursor state (preview)
+let cursorSpur = parseInt(spurEl.value, 10);
+let cursorPinion = parseInt(pinionEl.value, 10);
 
 // ===============================
 // UNIT DETECTION
@@ -111,7 +111,7 @@ function updateTireConversion() {
 }
 
 // ===============================
-// MAIN UPDATE
+// MAIN UPDATE (COMMITTED GEARING)
 // ===============================
 function update() {
   updateTireConversion();
@@ -135,7 +135,8 @@ function update() {
     legalEl.className = "bad";
   }
 
-  resetLocalTableCenter();
+  // Do NOT change cursor here (Option B: preview independent)
+  buildLocalTable();
   buildRecommended();
 }
 
@@ -172,26 +173,8 @@ tireEl.addEventListener("wheel", e => {
 });
 
 // ===============================
-// LOCALIZED VIRTUAL ±5 TABLE
+// LOCALIZED CURSOR-CENTERED TABLE
 // ===============================
-function resetLocalTableCenter() {
-  const spur0 = parseInt(spurEl.value, 10);
-  const pinion0 = parseInt(pinionEl.value, 10);
-
-  spurMin = Math.max(SPUR_MIN_SOFT, spur0 - 5);
-  spurMax = Math.min(SPUR_MAX_SOFT, spur0 + 5);
-  pinionMin = Math.max(PINION_MIN_SOFT, pinion0 - 5);
-  pinionMax = Math.min(PINION_MAX_SOFT, pinion0 + 5);
-
-  buildLocalTable();
-  centerLocalScroll();
-}
-
-function centerLocalScroll() {
-  localScroll.scrollTop = (localScroll.scrollHeight - localScroll.clientHeight) / 2;
-  localScroll.scrollLeft = (localScroll.scrollWidth - localScroll.clientWidth) / 2;
-}
-
 function buildLocalTable() {
   const spur0 = parseInt(spurEl.value, 10);
   const pinion0 = parseInt(pinionEl.value, 10);
@@ -201,8 +184,22 @@ function buildLocalTable() {
   const units = detectUnits(tire);
   if (units === "invalid") return;
 
+  // Clamp cursor to soft limits
+  cursorSpur = Math.max(SPUR_MIN_SOFT, Math.min(SPUR_MAX_SOFT, cursorSpur));
+  cursorPinion = Math.max(PINION_MIN_SOFT, Math.min(PINION_MAX_SOFT, cursorPinion));
+
+  const spurMin = Math.max(SPUR_MIN_SOFT, cursorSpur - SPAN);
+  const spurMax = Math.min(SPUR_MAX_SOFT, cursorSpur + SPAN);
+  const pinionMin = Math.max(PINION_MIN_SOFT, cursorPinion - SPAN);
+  const pinionMax = Math.min(PINION_MAX_SOFT, cursorPinion + SPAN);
+
   // Header
-  localHeadRow.innerHTML = `<th>Spur ↓ / Pinion →</th>`;
+  localHeadRow.innerHTML = "";
+  const corner = document.createElement("th");
+  corner.textContent = "Spur ↓ / Pinion →";
+  corner.classList.add("sticky-corner");
+  localHeadRow.appendChild(corner);
+
   for (let p = pinionMin; p <= pinionMax; p++) {
     const th = document.createElement("th");
     th.textContent = p;
@@ -227,15 +224,24 @@ function buildLocalTable() {
         ? rVal.toFixed(2)
         : rVal.toFixed(3);
 
+      // Current committed gearing
       if (s === spur0 && p === pinion0) {
-        cell.className = "current-gear";
+        cell.classList.add("current-gear");
       } else if (legal) {
-        cell.className = "legal-gear";
+        cell.classList.add("legal-gear");
       } else {
-        cell.className = "illegal-gear";
+        cell.classList.add("illegal-gear");
       }
 
+      // Cursor preview
+      if (s === cursorSpur && p === cursorPinion) {
+        cell.classList.add("cursor-cell");
+      }
+
+      // Click = commit (Option B)
       cell.addEventListener("click", () => {
+        cursorSpur = s;
+        cursorPinion = p;
         spurEl.value = s;
         pinionEl.value = p;
         update();
@@ -248,58 +254,44 @@ function buildLocalTable() {
   }
 }
 
-// Virtual scroll: extend ranges when near edges
-localScroll.addEventListener("scroll", () => {
-  const threshold = 20;
+// ===============================
+// KEYBOARD NAVIGATION (CURSOR)
+// ===============================
+function handleCursorKeys(e) {
+  const key = e.key;
 
-  const maxV = localScroll.scrollHeight - localScroll.clientHeight;
-  const maxH = localScroll.scrollWidth - localScroll.clientWidth;
-
-  let changed = false;
-
-  // Vertical: up
-  if (localScroll.scrollTop < threshold && spurMin > SPUR_MIN_SOFT) {
-    spurMin--;
-    spurMax--;
-    changed = true;
-  }
-
-  // Vertical: down
-  if (localScroll.scrollTop > maxV - threshold && spurMax < SPUR_MAX_SOFT) {
-    spurMin++;
-    spurMax++;
-    changed = true;
-  }
-
-  // Horizontal: left
-  if (localScroll.scrollLeft < threshold && pinionMin > PINION_MIN_SOFT) {
-    pinionMin--;
-    pinionMax--;
-    changed = true;
-  }
-
-  // Horizontal: right
-  if (localScroll.scrollLeft > maxH - threshold && pinionMax < PINION_MAX_SOFT) {
-    pinionMin++;
-    pinionMax++;
-    changed = true;
-  }
-
-  if (changed) {
-    const prevTop = localScroll.scrollTop;
-    const prevLeft = localScroll.scrollLeft;
-
+  if (key === "ArrowUp") {
+    e.preventDefault();
+    cursorSpur = Math.min(SPUR_MAX_SOFT, cursorSpur + 1);
     buildLocalTable();
-
-    // Smooth correction
-    localScroll.scrollTop = prevTop + (localScroll.scrollHeight - localScroll.clientHeight) / 22;
-    localScroll.scrollLeft = prevLeft + (localScroll.scrollWidth - localScroll.clientWidth) / 22;
+  } else if (key === "ArrowDown") {
+    e.preventDefault();
+    cursorSpur = Math.max(SPUR_MIN_SOFT, cursorSpur - 1);
+    buildLocalTable();
+  } else if (key === "ArrowLeft") {
+    e.preventDefault();
+    cursorPinion = Math.max(PINION_MIN_SOFT, cursorPinion - 1);
+    buildLocalTable();
+  } else if (key === "ArrowRight") {
+    e.preventDefault();
+    cursorPinion = Math.min(PINION_MAX_SOFT, cursorPinion + 1);
+    buildLocalTable();
+  } else if (key === "Enter") {
+    e.preventDefault();
+    // Commit cursor to inputs
+    spurEl.value = cursorSpur;
+    pinionEl.value = cursorPinion;
+    update();
   }
-});
+}
 
-// Center button
+window.addEventListener("keydown", handleCursorKeys);
+
+// Center button: snap cursor to current gearing
 centerBtn.addEventListener("click", () => {
-  resetLocalTableCenter();
+  cursorSpur = parseInt(spurEl.value, 10);
+  cursorPinion = parseInt(pinionEl.value, 10);
+  buildLocalTable();
 });
 
 // ===============================
@@ -346,6 +338,8 @@ function buildRecommended() {
     `;
 
     row.addEventListener("click", () => {
+      cursorSpur = m.s;
+      cursorPinion = m.p;
       spurEl.value = m.s;
       pinionEl.value = m.p;
       update();
@@ -361,3 +355,6 @@ desiredRolloutEl.addEventListener("input", buildRecommended);
 // INITIALIZE
 // ===============================
 update();
+cursorSpur = parseInt(spurEl.value, 10);
+cursorPinion = parseInt(pinionEl.value, 10);
+buildLocalTable();
