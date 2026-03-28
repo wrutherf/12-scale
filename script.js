@@ -1,6 +1,4 @@
-// ===============================
 // CAR RULES
-// ===============================
 const cars = {
   a12: { min: 112, max: 120 },
   a12x: { min: 112, max: 125 }
@@ -15,9 +13,7 @@ const PINION_MAX_SOFT = 80;
 // Viewport half-span (±5)
 const SPAN = 5;
 
-// ===============================
 // ELEMENTS
-// ===============================
 const spurEl = document.getElementById("spur");
 const pinionEl = document.getElementById("pinion");
 const tireEl = document.getElementById("tire");
@@ -41,9 +37,7 @@ const centerBtn = document.getElementById("centerBtn");
 let cursorSpur = parseInt(spurEl.value, 10);
 let cursorPinion = parseInt(pinionEl.value, 10);
 
-// ===============================
 // UNIT DETECTION
-// ===============================
 function detectUnits(tire) {
   if (tire > 37) return "mm";
   if (tire < 2) return "in";
@@ -51,9 +45,7 @@ function detectUnits(tire) {
   return "invalid";
 }
 
-// ===============================
 // ROLLOUT CALCULATION
-// ===============================
 function rolloutFromGears(spur, pinion, tire) {
   const units = detectUnits(tire);
   if (units === "invalid") return { value: NaN, units };
@@ -85,9 +77,7 @@ function updateRolloutDualUnits(value, units) {
   }
 }
 
-// ===============================
 // TIRE DUAL-UNIT DISPLAY
-// ===============================
 function updateTireConversion() {
   const val = parseFloat(tireEl.value);
   if (!val || val <= 0) {
@@ -110,9 +100,7 @@ function updateTireConversion() {
   }
 }
 
-// ===============================
 // MAIN UPDATE (COMMITTED GEARING)
-// ===============================
 function update() {
   updateTireConversion();
 
@@ -135,7 +123,6 @@ function update() {
     legalEl.className = "bad";
   }
 
-  // Do NOT change cursor here (Option B: preview independent)
   buildLocalTable();
   buildRecommended();
 }
@@ -144,9 +131,7 @@ document.querySelectorAll("input, select").forEach(el => {
   el.addEventListener("input", update);
 });
 
-// ===============================
 // SCROLL-TO-ADJUST INPUTS ONLY
-// ===============================
 function addScrollAdjust(el, step) {
   el.addEventListener("wheel", e => {
     e.preventDefault();
@@ -172,9 +157,7 @@ tireEl.addEventListener("wheel", e => {
   update();
 });
 
-// ===============================
 // LOCALIZED CURSOR-CENTERED TABLE
-// ===============================
 function buildLocalTable() {
   const spur0 = parseInt(spurEl.value, 10);
   const pinion0 = parseInt(pinionEl.value, 10);
@@ -214,6 +197,12 @@ function buildLocalTable() {
     labelCell.innerHTML = `<strong>${s}</strong>`;
     row.appendChild(labelCell);
 
+    // Spur header highlight
+    labelCell.classList.remove("header-highlight");
+    if (s === cursorSpur) {
+      labelCell.classList.add("header-highlight");
+    }
+
     for (let p = pinionMin; p <= pinionMax; p++) {
       const total = s + p;
       const { value: rVal } = rolloutFromGears(s, p, tire);
@@ -224,7 +213,6 @@ function buildLocalTable() {
         ? rVal.toFixed(2)
         : rVal.toFixed(3);
 
-      // Current committed gearing
       if (s === spur0 && p === pinion0) {
         cell.classList.add("current-gear");
       } else if (legal) {
@@ -233,12 +221,10 @@ function buildLocalTable() {
         cell.classList.add("illegal-gear");
       }
 
-      // Cursor preview
       if (s === cursorSpur && p === cursorPinion) {
         cell.classList.add("cursor-cell");
       }
 
-      // Click = commit (Option B)
       cell.addEventListener("click", () => {
         cursorSpur = s;
         cursorPinion = p;
@@ -252,11 +238,20 @@ function buildLocalTable() {
 
     localBody.appendChild(row);
   }
+
+  // Pinion header highlight
+  Array.from(localHeadRow.children).forEach((th, idx) => {
+    th.classList.remove("header-highlight");
+    if (idx > 0) {
+      const pinionVal = pinionMin + (idx - 1);
+      if (pinionVal === cursorPinion) {
+        th.classList.add("header-highlight");
+      }
+    }
+  });
 }
 
-// ===============================
 // KEYBOARD NAVIGATION (CURSOR)
-// ===============================
 function handleCursorKeys(e) {
   const key = e.key;
 
@@ -278,7 +273,6 @@ function handleCursorKeys(e) {
     buildLocalTable();
   } else if (key === "Enter") {
     e.preventDefault();
-    // Commit cursor to inputs
     spurEl.value = cursorSpur;
     pinionEl.value = cursorPinion;
     update();
@@ -294,9 +288,7 @@ centerBtn.addEventListener("click", () => {
   buildLocalTable();
 });
 
-// ===============================
 // RECOMMENDED GEARING
-// ===============================
 function buildRecommended() {
   const desired = parseFloat(desiredRolloutEl.value);
   const tire = parseFloat(tireEl.value);
@@ -351,9 +343,7 @@ function buildRecommended() {
 
 desiredRolloutEl.addEventListener("input", buildRecommended);
 
-// ===============================
 // INITIALIZE
-// ===============================
 update();
 cursorSpur = parseInt(spurEl.value, 10);
 cursorPinion = parseInt(pinionEl.value, 10);
