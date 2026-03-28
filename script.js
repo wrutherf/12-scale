@@ -6,6 +6,12 @@ const cars = {
   a12x: { min: 112, max: 125 }
 };
 
+// Soft limits for virtual table
+const SPUR_MIN_SOFT = 20;
+const SPUR_MAX_SOFT = 120;
+const PINION_MIN_SOFT = 10;
+const PINION_MAX_SOFT = 80;
+
 // ===============================
 // ELEMENTS
 // ===============================
@@ -18,11 +24,19 @@ const rolloutEl = document.getElementById("rollout");
 const totalEl = document.getElementById("total");
 const legalEl = document.getElementById("legal");
 
+const localScroll = document.getElementById("localScroll");
 const localBody = document.querySelector("#localTable tbody");
-const localHeadRow = document.querySelector("#localTable thead tr");
+const localHeadRow = document.getElementById("localHeadRow");
 
 const desiredRolloutEl = document.getElementById("desiredRollout");
 const recommendedBody = document.querySelector("#recommended tbody");
+const centerBtn = document.getElementById("centerBtn");
+
+// Virtual table state
+let spurMin = null;
+let spurMax = null;
+let pinionMin = null;
+let pinionMax = null;
 
 // ===============================
 // UNIT DETECTION
@@ -78,7 +92,7 @@ function update() {
     legalEl.className = "bad";
   }
 
-  buildLocalTable();
+  resetLocalTableCenter();
   buildRecommended();
 }
 
@@ -87,13 +101,13 @@ document.querySelectorAll("input, select").forEach(el => {
 });
 
 // ===============================
-// SCROLL-TO-ADJUST INPUTS
+// SCROLL-TO-ADJUST INPUTS ONLY
 // ===============================
 function addScrollAdjust(el, step) {
   el.addEventListener("wheel", e => {
     e.preventDefault();
     const dir = e.deltaY < 0 ? 1 : -1;
-    el.value = parseInt(el.value, 10) + step * dir;
+    el.value = parseInt(el.value || "0", 10) + step * dir;
     update();
   });
 }
@@ -103,7 +117,7 @@ addScrollAdjust(pinionEl, 1);
 
 tireEl.addEventListener("wheel", e => {
   e.preventDefault();
-  const val = parseFloat(tireEl.value);
+  const val = parseFloat(tireEl.value || "0");
   const units = detectUnits(val);
   if (units === "invalid") return;
 
@@ -115,8 +129,29 @@ tireEl.addEventListener("wheel", e => {
 });
 
 // ===============================
-// LOCALIZED ±10 TABLE
+// LOCALIZED VIRTUAL ±5 TABLE
 // ===============================
+function resetLocalTableCenter() {
+  const spur0 = parseInt(spurEl.value, 10);
+  const pinion0 = parseInt(pinionEl.value, 10);
+
+  if (!spur0 || !pinion0) return;
+
+  spurMin = Math.max(SPUR_MIN_SOFT, spur0 - 5);
+  spurMax = Math.min(SPUR_MAX_SOFT, spur0 + 5);
+  pinionMin = Math.max(PINION_MIN_SOFT, pinion0 - 5);
+  pinionMax = Math.min(PINION_MAX_SOFT, pinion0 + 5);
+
+  buildLocalTable();
+  centerLocalScroll();
+}
+
+function centerLocalScroll() {
+  // Rough center of the content
+  localScroll.scrollTop = (localScroll.scrollHeight - localScroll.clientHeight) / 2;
+  localScroll.scrollLeft = (localScroll.scrollWidth - localScroll.clientWidth) / 2;
+}
+
 function buildLocalTable() {
   const spur0 = parseInt(spurEl.value, 10);
   const pinion0 = parseInt(pinionEl.value, 10);
@@ -124,23 +159,27 @@ function buildLocalTable() {
   const car = cars[carEl.value];
 
   const units = detectUnits(tire);
-  if (units === "invalid") return;
-
-  const spurMin = Math.max(1, spur0 - 10);
-  const spurMax = spur0 + 10;
-  const pinionMin = Math.max(1, pinion0 - 10);
-  const pinionMax = pinion0 + 10;
-
-  localHeadRow.innerHTML = `<th>Spur ↓ / Pinion →</th>`;
-  for (let p = pinionMin; p <= pinionMax; p++) {
-    localHeadRow.innerHTML += `<th>${p}</th>`;
+  if (units === "invalid" || !spur0 || !pinion0 || !tire) {
+    localBody.innerHTML = "";
+    localHeadRow.innerHTML = `<th>Spur ↓ / Pinion →</th>`;
+    return;
   }
 
-  localBody.innerHTML = "";
+  // Header
+  localHeadRow.innerHTML = `<th>Spur ↓ / Pinion →</th>`;
+  for (let p = pinionMin; p <= pinionMax; p++) {
+    const th = document.createElement("th");
+    th.textContent = p;
+    localHeadRow.appendChild(th);
+  }
 
+  // Body
+  localBody.innerHTML = "";
   for (let s = spurMin; s <= spurMax; s++) {
     const row = document.createElement("tr");
-    row.innerHTML = `<td><strong>${s}</strong></td>`;
+    const labelCell = document.createElement("td");
+    labelCell.innerHTML = `<strong>${s}</strong>`;
+    row.appendChild(labelCell);
 
     for (let p = pinionMin; p <= pinionMax; p++) {
       const total = s + p;
@@ -158,17 +197,14 @@ function buildLocalTable() {
         cell.className = "illegal-gear";
       }
 
-      // Click to load gearing
       cell.addEventListener("click", () => {
         spurEl.value = s;
         pinionEl.value = p;
         update();
       });
 
-      // Wheel: do nothing so scrolling only moves the table
-      cell.addEventListener("wheel", () => {
-        // intentionally empty
-      });
+      // Do NOT change inputs on wheel; allow natural scroll
+      cell.addEventListener("wheel", () => {});
 
       row.appendChild(cell);
     }
@@ -176,6 +212,60 @@ function buildLocalTable() {
     localBody.appendChild(row);
   }
 }
+
+// Virtual scroll: extend ranges when near edges
+localScroll.addEventListener("scroll", () => {
+  const threshold = 20;
+
+  const maxV = localScroll.scrollHeight - localScroll.clientHeight;
+  const maxH = localScroll.scrollWidth - localScroll.clientWidth;
+
+  let changed = false;
+
+  // Vertical: up
+  if (localScroll.scrollTop < threshold && spurMin > SPUR_MIN_SOFT) {
+    spurMin = Math.max(SPUR_MIN_SOFT, spurMin - 1);
+    spurMax = spurMin + 10;
+    changed = true;
+  }
+
+  // Vertical: down
+  if (localScroll.scrollTop > maxV - threshold && spurMax < SPUR_MAX_SOFT) {
+    spurMax = Math.min(SPUR_MAX_SOFT, spurMax + 1);
+    spurMin = spurMax - 10;
+    changed = true;
+  }
+
+  // Horizontal: left
+  if (localScroll.scrollLeft < threshold && pinionMin > PINION_MIN_SOFT) {
+    pinionMin = Math.max(PINION_MIN_SOFT, pinionMin - 1);
+    pinionMax = pinionMin + 10;
+    changed = true;
+  }
+
+  // Horizontal: right
+  if (localScroll.scrollLeft > maxH - threshold && pinionMax < PINION_MAX_SOFT) {
+    pinionMax = Math.min(PINION_MAX_SOFT, pinionMax + 1);
+    pinionMin = pinionMax - 10;
+    changed = true;
+  }
+
+  if (changed) {
+    const prevTop = localScroll.scrollTop;
+    const prevLeft = localScroll.scrollLeft;
+
+    buildLocalTable();
+
+    // Keep it feeling stable: nudge back toward center
+    localScroll.scrollTop = prevTop + (localScroll.scrollHeight - localScroll.clientHeight) / 22;
+    localScroll.scrollLeft = prevLeft + (localScroll.scrollWidth - localScroll.clientWidth) / 22;
+  }
+});
+
+// Center button
+centerBtn.addEventListener("click", () => {
+  resetLocalTableCenter();
+});
 
 // ===============================
 // RECOMMENDED GEARING
@@ -186,11 +276,12 @@ function buildRecommended() {
   const car = cars[carEl.value];
 
   const units = detectUnits(tire);
-  if (units === "invalid") return;
+  if (units === "invalid" || !desired || !tire) {
+    recommendedBody.innerHTML = "";
+    return;
+  }
 
   recommendedBody.innerHTML = "";
-  if (!desired || !tire) return;
-
   const list = [];
 
   for (let s = 40; s <= 80; s++) {
