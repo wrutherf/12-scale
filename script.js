@@ -19,12 +19,8 @@ const pinionEl = document.getElementById("pinion");
 const tireEl = document.getElementById("tire");
 const carEl = document.getElementById("car");
 
-const rolloutPrimary = document.getElementById("rolloutPrimary");
-const rolloutSecondary = document.getElementById("rolloutSecondary");
-const totalEl = document.getElementById("total");
-const legalEl = document.getElementById("legal");
-
 const tireConverted = document.getElementById("tireConverted");
+const teethRangeEl = document.getElementById("teethRange");
 
 const localBody = document.getElementById("localBody");
 const localHeadRow = document.getElementById("localHeadRow");
@@ -59,24 +55,6 @@ function rolloutFromGears(spur, pinion, tire) {
   return { value: rolloutMm / 25.4, units };
 }
 
-function updateRolloutDualUnits(value, units) {
-  if (!isFinite(value)) {
-    rolloutPrimary.textContent = "—";
-    rolloutSecondary.textContent = "";
-    return;
-  }
-
-  if (units === "mm") {
-    const inches = value / 25.4;
-    rolloutPrimary.textContent = `${value.toFixed(2)} mm`;
-    rolloutSecondary.textContent = `${inches.toFixed(3)} in`;
-  } else {
-    const mm = value * 25.4;
-    rolloutPrimary.textContent = `${value.toFixed(3)} in`;
-    rolloutSecondary.textContent = `${mm.toFixed(2)} mm`;
-  }
-}
-
 // TIRE DUAL-UNIT DISPLAY
 function updateTireConversion() {
   const val = parseFloat(tireEl.value);
@@ -100,35 +78,29 @@ function updateTireConversion() {
   }
 }
 
+// TEETH RANGE DISPLAY
+function updateTeethRange() {
+  const car = cars[carEl.value];
+  teethRangeEl.textContent = `${car.min}–${car.max}`;
+}
+
 // MAIN UPDATE (COMMITTED GEARING)
 function update() {
   updateTireConversion();
-
-  const spur = parseInt(spurEl.value, 10);
-  const pinion = parseInt(pinionEl.value, 10);
-  const tire = parseFloat(tireEl.value);
-  const car = cars[carEl.value];
-
-  const { value: rVal, units } = rolloutFromGears(spur, pinion, tire);
-  const total = spur + pinion;
-
-  updateRolloutDualUnits(rVal, units);
-  totalEl.textContent = total;
-
-  if (total >= car.min && total <= car.max) {
-    legalEl.textContent = `Valid (${car.min}–${car.max})`;
-    legalEl.className = "good";
-  } else {
-    legalEl.textContent = `Out of range (${car.min}–${car.max})`;
-    legalEl.className = "bad";
-  }
+  updateTeethRange();
 
   buildLocalTable();
   buildRecommended();
 }
 
-document.querySelectorAll("input, select").forEach(el => {
+document.querySelectorAll("select").forEach(el => {
   el.addEventListener("input", update);
+});
+
+document.querySelectorAll("input").forEach(el => {
+  if (el.id !== "desiredRollout") {
+    el.addEventListener("input", update);
+  }
 });
 
 // SCROLL-TO-ADJUST INPUTS ONLY
@@ -136,7 +108,10 @@ function addScrollAdjust(el, step) {
   el.addEventListener("wheel", e => {
     e.preventDefault();
     const dir = e.deltaY < 0 ? 1 : -1;
-    el.value = parseInt(el.value || "0", 10) + step * dir;
+    el.value = parseFloat(el.value || "0") + step * dir;
+    if (el === tireEl) {
+      el.value = parseFloat(el.value).toFixed(3);
+    }
     update();
   });
 }
@@ -205,13 +180,35 @@ function buildLocalTable() {
 
     for (let p = pinionMin; p <= pinionMax; p++) {
       const total = s + p;
-      const { value: rVal } = rolloutFromGears(s, p, tire);
+      const { value: rVal, units: rUnits } = rolloutFromGears(s, p, tire);
       const legal = total >= car.min && total <= car.max;
 
       const cell = document.createElement("td");
-      cell.textContent = units === "mm"
-        ? rVal.toFixed(2)
-        : rVal.toFixed(3);
+
+      // Dual-unit content
+      let metricVal, imperialVal;
+      if (rUnits === "mm") {
+        metricVal = rVal;
+        imperialVal = rVal / 25.4;
+      } else {
+        imperialVal = rVal;
+        metricVal = rVal * 25.4;
+      }
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "cell-rollout";
+
+      const metricSpan = document.createElement("span");
+      metricSpan.className = "metric";
+      metricSpan.textContent = isFinite(metricVal) ? metricVal.toFixed(2) : "—";
+
+      const imperialSpan = document.createElement("span");
+      imperialSpan.className = "imperial";
+      imperialSpan.textContent = isFinite(imperialVal) ? imperialVal.toFixed(3) : "—";
+
+      wrapper.appendChild(metricSpan);
+      wrapper.appendChild(imperialSpan);
+      cell.appendChild(wrapper);
 
       if (s === spur0 && p === pinion0) {
         cell.classList.add("current-gear");
@@ -251,25 +248,29 @@ function buildLocalTable() {
   });
 }
 
-// KEYBOARD NAVIGATION (CURSOR)
+// KEYBOARD NAVIGATION (CURSOR) – INVERTED
 function handleCursorKeys(e) {
   const key = e.key;
 
+  // Ignore if an input is focused
+  const active = document.activeElement;
+  if (active && (active.tagName === "INPUT" || active.tagName === "SELECT")) return;
+
   if (key === "ArrowUp") {
     e.preventDefault();
-    cursorSpur = Math.min(SPUR_MAX_SOFT, cursorSpur + 1);
+    cursorSpur = Math.max(SPUR_MIN_SOFT, cursorSpur - 1); // move up
     buildLocalTable();
   } else if (key === "ArrowDown") {
     e.preventDefault();
-    cursorSpur = Math.max(SPUR_MIN_SOFT, cursorSpur - 1);
+    cursorSpur = Math.min(SPUR_MAX_SOFT, cursorSpur + 1); // move down
     buildLocalTable();
   } else if (key === "ArrowLeft") {
     e.preventDefault();
-    cursorPinion = Math.max(PINION_MIN_SOFT, cursorPinion - 1);
+    cursorPinion = Math.min(PINION_MAX_SOFT, cursorPinion + 1); // move right
     buildLocalTable();
   } else if (key === "ArrowRight") {
     e.preventDefault();
-    cursorPinion = Math.min(PINION_MAX_SOFT, cursorPinion + 1);
+    cursorPinion = Math.max(PINION_MIN_SOFT, cursorPinion - 1); // move left
     buildLocalTable();
   } else if (key === "Enter") {
     e.preventDefault();
@@ -308,10 +309,17 @@ function buildRecommended() {
       const total = s + p;
       if (total < car.min || total > car.max) continue;
 
-      const { value: rVal } = rolloutFromGears(s, p, tire);
-      const diff = Math.abs(rVal - desired);
+      const { value: rVal, units: rUnits } = rolloutFromGears(s, p, tire);
+      let rolloutVal = rVal;
+      if (rUnits === "mm" && units === "in") {
+        rolloutVal = rVal / 25.4;
+      } else if (rUnits === "in" && units === "mm") {
+        rolloutVal = rVal * 25.4;
+      }
 
-      list.push({ s, p, total, rVal, diff });
+      const diff = Math.abs(rolloutVal - desired);
+
+      list.push({ s, p, total, rVal: rolloutVal, diff });
     }
   }
 
@@ -342,6 +350,39 @@ function buildRecommended() {
 }
 
 desiredRolloutEl.addEventListener("input", buildRecommended);
+
+// INPUT ARROW KEY INCREMENTING
+function addArrowIncrement(el, getStep) {
+  el.addEventListener("keydown", e => {
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      e.preventDefault();
+      e.stopPropagation();
+      const dir = e.key === "ArrowUp" ? 1 : -1;
+      const step = getStep();
+      const val = parseFloat(el.value || "0");
+      el.value = (val + step * dir).toFixed(
+        el === tireEl ? 3 :
+        el === desiredRolloutEl ? 2 : 0
+      );
+      if (el === spurEl || el === pinionEl || el === tireEl) {
+        update();
+      } else if (el === desiredRolloutEl) {
+        buildRecommended();
+      }
+    }
+  });
+}
+
+addArrowIncrement(spurEl, () => 1);
+addArrowIncrement(pinionEl, () => 1);
+addArrowIncrement(tireEl, () => {
+  const val = parseFloat(tireEl.value || "0");
+  const units = detectUnits(val);
+  if (units === "mm") return 0.05;
+  if (units === "in") return 0.005;
+  return 0.05;
+});
+addArrowIncrement(desiredRolloutEl, () => 0.01);
 
 // INITIALIZE
 update();
