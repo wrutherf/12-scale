@@ -46,6 +46,9 @@ function update() {
     legalEl.textContent = `Out of range (${car.min}–${car.max})`;
     legalEl.className = "bad";
   }
+
+  buildFullTable();
+  buildRecommended();
 }
 
 document.querySelectorAll("input, select").forEach(el => {
@@ -66,20 +69,55 @@ function addScrollAdjust(el, step) {
   });
 }
 
-// Spur & pinion: integer steps
 addScrollAdjust(spurEl, 1);
 addScrollAdjust(pinionEl, 1);
 
-// Tire: metric vs imperial
 tireEl.addEventListener("wheel", (e) => {
   e.preventDefault();
   const val = parseFloat(tireEl.value);
-  const isImperial = val < 5; // heuristic: inches < 5, mm > 20
+  const isImperial = val < 5;
   const step = isImperial ? 0.005 : 0.05;
   const dir = e.deltaY < 0 ? 1 : -1;
   tireEl.value = (val + step * dir).toFixed(3);
   update();
 });
+
+// ===============================
+// FULL GEARING TABLE
+// ===============================
+function buildFullTable() {
+  const tire = parseFloat(tireEl.value);
+  const car = cars[carEl.value];
+
+  const tbody = document.querySelector("#fullTable tbody");
+  const thead = document.querySelector("#fullTable thead tr");
+
+  tbody.innerHTML = "";
+  thead.innerHTML = `<th>Spur ↓ / Pinion →</th>`;
+
+  for (let pinion = 30; pinion <= 60; pinion++) {
+    thead.innerHTML += `<th>${pinion}</th>`;
+  }
+
+  for (let spur = 50; spur <= 80; spur++) {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td><strong>${spur}</strong></td>`;
+
+    for (let pinion = 30; pinion <= 60; pinion++) {
+      const total = spur + pinion;
+      const rollout = Math.PI * tire * (pinion / spur);
+      const legal = total >= car.min && total <= car.max;
+
+      row.innerHTML += `
+        <td class="${legal ? 'legal-gear' : 'illegal-gear'}">
+          ${rollout.toFixed(1)}
+        </td>
+      `;
+    }
+
+    tbody.appendChild(row);
+  }
+}
 
 // ===============================
 // TARGET MATCH FINDER
@@ -113,16 +151,14 @@ function findMatches() {
   matches.forEach(m => {
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td class="editable" data-type="spur">${m.spur}</td>
-      <td class="editable" data-type="pinion">${m.pinion}</td>
+      <td>${m.spur}</td>
+      <td>${m.pinion}</td>
       <td>${m.total}</td>
       <td>${m.rollout.toFixed(2)}</td>
       <td>${m.diffPct.toFixed(2)}%</td>
     `;
     resultsBody.appendChild(row);
   });
-
-  enableEditableCells();
 }
 
 document.getElementById("find").addEventListener("click", findMatches);
@@ -153,41 +189,14 @@ function buildRecommended() {
   list.forEach(m => {
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td class="editable" data-type="spur">${m.spur}</td>
-      <td class="editable" data-type="pinion">${m.pinion}</td>
+      <td>${m.spur}</td>
+      <td>${m.pinion}</td>
       <td>${m.total}</td>
       <td>${m.rollout.toFixed(2)}</td>
     `;
     recommendedBody.appendChild(row);
   });
-
-  enableEditableCells();
 }
 
+buildFullTable();
 buildRecommended();
-carEl.addEventListener("change", buildRecommended);
-tireEl.addEventListener("input", buildRecommended);
-
-// ===============================
-// CLICK-TO-EDIT TABLE CELLS
-// ===============================
-function enableEditableCells() {
-  document.querySelectorAll(".editable").forEach(cell => {
-    cell.addEventListener("click", () => {
-      const type = cell.dataset.type;
-      const el = type === "spur" ? spurEl : pinionEl;
-      el.value = cell.textContent;
-      update();
-    });
-
-    cell.addEventListener("wheel", (e) => {
-      e.preventDefault();
-      const type = cell.dataset.type;
-      const el = type === "spur" ? spurEl : pinionEl;
-      const dir = e.deltaY < 0 ? 1 : -1;
-      el.value = parseInt(el.value) + dir;
-      cell.textContent = el.value;
-      update();
-    });
-  });
-}
