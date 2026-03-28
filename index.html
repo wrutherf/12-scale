@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rollout Calculator</title>
 
-  <!-- Favicon + Styles -->
   <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -18,9 +17,11 @@
 </header>
 
 <!-- =========================
-     INPUT SECTION
+     INPUT SECTION (Example Style)
 ========================= -->
 <section class="card">
+  <h2>Car & Gear Inputs</h2>
+
   <div class="input-row">
     <label>
       Car
@@ -53,6 +54,8 @@
      OUTPUT SECTION
 ========================= -->
 <section class="card output">
+  <h2>Current Rollout</h2>
+
   <div><strong>Rollout:</strong> <span id="rollout">—</span> mm/rev</div>
   <div><strong>Total Teeth:</strong> <span id="total">—</span></div>
   <div><strong>Legality:</strong> <span id="legal">—</span></div>
@@ -80,10 +83,10 @@
 </section>
 
 <!-- =========================
-     RESULTS TABLE
+     MATCHING GEARS TABLE
 ========================= -->
 <section class="card">
-  <h2>Suggested Gear Pairs</h2>
+  <h2>Matching Gear Pairs</h2>
 
   <table id="results">
     <thead>
@@ -100,8 +103,24 @@
 </section>
 
 <!-- =========================
-     SCRIPT
+     RECOMMENDED GEARS (Sorted High → Low)
 ========================= -->
+<section class="card">
+  <h2>Recommended Gearing (High → Low Rollout)</h2>
+
+  <table id="recommended">
+    <thead>
+      <tr>
+        <th>Spur</th>
+        <th>Pinion</th>
+        <th>Total</th>
+        <th>Rollout</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+
 <script src="script.js"></script>
 
 </body>
