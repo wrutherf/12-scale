@@ -47,13 +47,15 @@
     </label>
   </div>
 
-  <!-- Localized ±10 table INSIDE input card -->
-  <h2>Local Gearing Table (±10)</h2>
+  <h2 class="local-header">
+    <span>Local Gearing Table (±5)</span>
+    <button id="centerBtn" class="center-btn">🎯 Center</button>
+  </h2>
 
-  <div class="local-scroll">
+  <div id="localScroll" class="local-scroll">
     <table id="localTable">
       <thead>
-        <tr>
+        <tr id="localHeadRow">
           <th>Spur ↓ / Pinion →</th>
         </tr>
       </thead>
