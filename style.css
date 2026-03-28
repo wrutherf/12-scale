@@ -62,6 +62,12 @@ select {
   border-radius: 6px;
 }
 
+.teeth-range {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  color: #ccc;
+}
+
 /* CONVERTED UNIT TEXT */
 .converted {
   font-size: 0.85rem;
@@ -111,11 +117,12 @@ select {
 
 #localTable th,
 #localTable td {
-  padding: 6px 10px;
+  padding: 10px 14px;
   border: 1px solid #333;
   text-align: center;
   white-space: nowrap;
   background: #1b1b1b;
+  font-size: 0.9rem;
 }
 
 /* Sticky header row */
@@ -136,6 +143,22 @@ select {
 /* Top-left corner cell */
 #localTable th.sticky-corner {
   z-index: 30;
+}
+
+/* CELL CONTENT (DUAL UNIT) */
+.cell-rollout {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.cell-rollout .metric {
+  font-size: 0.95rem;
+}
+
+.cell-rollout .imperial {
+  font-size: 0.8rem;
+  color: #ccc;
 }
 
 /* COLOR CODING */
@@ -168,17 +191,6 @@ select {
   font-weight: bold;
 }
 
-/* ROLLOUT DISPLAY */
-#rolloutPrimary {
-  font-size: 1.1rem;
-  margin-bottom: 2px;
-}
-
-#rolloutSecondary {
-  font-size: 0.85rem;
-  color: #bbb;
-}
-
 /* RECOMMENDED & TIRE TABLES */
 .scroll-container {
   max-height: 350px;
@@ -202,7 +214,7 @@ select {
   text-align: center;
 }
 
-/* Legality text */
+/* Legality text (if used elsewhere) */
 .good {
   color: #00ff7f;
 }
