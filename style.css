@@ -1,0 +1,90 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: #111;
+  color: #eee;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+header {
+  background: #1A1A1A url("assets/carbon.png");
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  border-bottom: 3px solid #FF6A00;
+}
+
+header img {
+  height: 48px;
+  margin-right: 16px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  letter-spacing: 1px;
+}
+
+.card {
+  background: #1A1A1A;
+  border: 1px solid #333;
+  border-left: 4px solid #FF6A00;
+  padding: 16px;
+  margin: 20px;
+  border-radius: 4px;
+}
+
+label {
+  display: block;
+  margin-bottom: 12px;
+}
+
+input, select {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  background: #222;
+  border: 1px solid #444;
+  color: #eee;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background: #FF6A00;
+  border: none;
+  color: #fff;
+  font-size: 1rem;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #e05f00;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+th, td {
+  padding: 10px;
+  border-bottom: 1px solid #333;
+  text-align: center;
+}
+
+tr:nth-child(even) {
+  background: #181818;
+}
+
+.good {
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.bad {
+  color: #FF4444;
+  font-weight: bold;
+}
