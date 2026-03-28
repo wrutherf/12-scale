@@ -258,19 +258,19 @@ function handleCursorKeys(e) {
 
   if (key === "ArrowUp") {
     e.preventDefault();
-    cursorSpur = Math.max(SPUR_MIN_SOFT, cursorSpur - 1); // move up
+    cursorSpur = Math.max(SPUR_MIN_SOFT, cursorSpur - 1);
     buildLocalTable();
   } else if (key === "ArrowDown") {
     e.preventDefault();
-    cursorSpur = Math.min(SPUR_MAX_SOFT, cursorSpur + 1); // move down
+    cursorSpur = Math.min(SPUR_MAX_SOFT, cursorSpur + 1);
     buildLocalTable();
   } else if (key === "ArrowLeft") {
     e.preventDefault();
-    cursorPinion = Math.min(PINION_MAX_SOFT, cursorPinion + 1); // move right
+    cursorPinion = Math.min(PINION_MAX_SOFT, cursorPinion + 1);
     buildLocalTable();
   } else if (key === "ArrowRight") {
     e.preventDefault();
-    cursorPinion = Math.max(PINION_MIN_SOFT, cursorPinion - 1); // move left
+    cursorPinion = Math.max(PINION_MIN_SOFT, cursorPinion - 1);
     buildLocalTable();
   } else if (key === "Enter") {
     e.preventDefault();
@@ -289,10 +289,7 @@ centerBtn.addEventListener("click", () => {
   buildLocalTable();
 });
 
-
-
-
-// RECOMMENDED GEARING
+// RECOMMENDED GEARING (imperial-aware + car-limited)
 function buildRecommended() {
   const desiredRaw = parseFloat(desiredRolloutEl.value);
   const tire = parseFloat(tireEl.value);
@@ -314,9 +311,18 @@ function buildRecommended() {
   recommendedBody.innerHTML = "";
   const list = [];
 
-  for (let s = 40; s <= 80; s++) {
-    for (let p = 20; p <= 70; p++) {
+  // Spur/pinion search ranges
+  const spurMin = 20;
+  const spurMax = 120;
+  const pinionMin = 10;
+  const pinionMax = 80;
+
+  for (let s = spurMin; s <= spurMax; s++) {
+    for (let p = pinionMin; p <= pinionMax; p++) {
+
       const total = s + p;
+
+      // HARD FILTER: only show gearing inside the selected car's tooth range
       if (total < car.min || total > car.max) continue;
 
       const { value: rVal, units: rUnits } = rolloutFromGears(s, p, tire);
@@ -371,7 +377,6 @@ function buildRecommended() {
     recommendedBody.appendChild(row);
   });
 }
-
 
 desiredRolloutEl.addEventListener("input", buildRecommended);
 
