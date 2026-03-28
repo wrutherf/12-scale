@@ -96,3 +96,31 @@ input, select {
   border: 1px solid #333;
   text-align: center;
 }
+
+/* Force the table container to never exceed the card width */
+.local-scroll {
+  width: 100%;
+  max-width: 100%;
+  max-height: 350px;
+  overflow: auto; /* enables both horizontal + vertical scroll */
+  border: 1px solid #333;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+/* Prevent the table from stretching the card */
+#localTable {
+  width: max-content; /* table can be wider than the card */
+  max-width: none;    /* prevents forcing card to expand */
+  border-collapse: collapse;
+}
+
+/* Ensure cells don't force expansion */
+#localTable th,
+#localTable td {
+  white-space: nowrap; /* prevents wrapping */
+  padding: 6px 10px;
+  border: 1px solid #333;
+  text-align: center;
+}
+
