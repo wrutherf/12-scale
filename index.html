@@ -32,6 +32,7 @@
     <label>
       Tire Diameter
       <input type="number" id="tire" value="40" step="0.1">
+      <div id="tireConverted" class="converted"></div>
     </label>
   </div>
 
@@ -70,7 +71,12 @@
 <section class="card">
   <h2>Current Rollout</h2>
 
-  <div><strong>Rollout:</strong> <span id="rollout">—</span></div>
+  <div>
+    <strong>Rollout:</strong>
+    <div id="rolloutPrimary">—</div>
+    <div id="rolloutSecondary" class="converted"></div>
+  </div>
+
   <div><strong>Total Teeth:</strong> <span id="total">—</span></div>
   <div><strong>Legality:</strong> <span id="legal">—</span></div>
 </section>
