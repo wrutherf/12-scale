@@ -10,99 +10,98 @@
   <header>
     <h1>Rollout Calculator</h1>
     <nav>
-      <a href="tires.html" class="nav-link">Tire Size Chart</a>
+      <a href="tires.html" class="nav-link">Tire Sets & History</a>
     </nav>
   </header>
 
-  <!-- INPUTS CARD -->
+  <!-- CALCULATOR CARD -->
   <section class="card collapsible expanded">
     <div class="card-header">
-      <h2>Inputs</h2>
+      <h2>Gearing & Rollout</h2>
       <span class="collapse-arrow">▼</span>
     </div>
+
     <div class="card-content">
       <div class="input-row inline">
-        <label>Spur
-          <input type="number" id="spur" value="66">
+        <label>Racer
+          <select id="calcRacerSelect"></select>
         </label>
-        <label>Pinion
-          <input type="number" id="pinion" value="50">
+
+        <label>Tire Set
+          <select id="calcTireSetSelect"></select>
         </label>
-        <label>Tire Diameter
-          <input type="number" id="tire" value="40.00" step="0.01">
-          <div id="tireConverted" class="converted"></div>
-        </label>
-        <label>Car
-          <select id="car">
-            <option value="a12">A12</option>
-            <option value="a12x">A12X</option>
+
+        <label>Tire Side
+          <select id="calcTireSideSelect">
+            <option value="LH">LH</option>
+            <option value="RH">RH</option>
           </select>
-          <div class="teeth-range">Teeth Range: <span id="teethRange"></span></div>
         </label>
       </div>
-    </div>
-  </section>
 
-  <!-- LOCAL GEARING MAP CARD -->
-  <section class="card collapsible expanded">
-    <div class="card-header">
-      <h2>Local Gearing Map</h2>
-      <span class="collapse-arrow">▼</span>
-    </div>
-    <div class="card-content">
-      <button id="centerBtn" class="center-btn">Center on Current Gearing</button>
+      <div class="input-row inline" style="margin-top: 10px;">
+        <label>Spur
+          <input type="number" id="spur" step="1">
+        </label>
 
-      <div class="local-scroll">
+        <label>Pinion
+          <input type="number" id="pinion" step="1">
+        </label>
+
+        <label>Tire Diameter (mm)
+          <input type="number" id="tire" step="0.01">
+          <span id="tireManualIndicator" style="font-size:0.75rem;color:#aaa;margin-top:2px;"></span>
+        </label>
+
+        <label>Tire Diameter (in)
+          <span id="tireConverted"></span>
+        </label>
+
+        <label>Desired Rollout (in)
+          <input type="number" id="desiredRollout" step="0.001">
+        </label>
+
+        <label>Car
+          <select id="car">
+            <option value="a12x">A12X</option>
+            <option value="generic">Generic</option>
+          </select>
+        </label>
+      </div>
+
+      <div style="margin-top:10px; display:flex; align-items:center; gap:10px;">
+        <span id="teethRange"></span>
+        <button id="centerBtn">Center on Current Gearing</button>
+      </div>
+
+      <div class="scroll-container" style="margin-top:10px;">
         <table id="localTable">
           <thead>
             <tr id="localHeadRow">
-              <th class="sticky-corner">Spur ↓ / Pinion →</th>
+              <!-- built by JS -->
             </tr>
           </thead>
-          <tbody id="localBody"></tbody>
+          <tbody id="localBody">
+            <!-- built by JS -->
+          </tbody>
         </table>
       </div>
 
-      <p class="hint">Use arrow keys to move the cursor. Press Enter or click a cell to commit gearing.</p>
-    </div>
-  </section>
-
-
-  
-  <!-- TARGET ROLLOUT CARD -->
-  <section class="card collapsible expanded">
-    <div class="card-header">
-      <h2>Target Rollout</h2>
-      <span class="collapse-arrow">▼</span>
-    </div>
-    <div class="card-content">
-      <div class="input-row inline">
-        <label>Desired Rollout
-          <input type="number" id="desiredRollout" step="0.01">
-        </label>
-      </div>
-    </div>
-  </section>
-
-  <!-- RECOMMENDED GEARING CARD -->
-  <section class="card collapsible expanded">
-    <div class="card-header">
-      <h2>Recommended Gearing</h2>
-      <span class="collapse-arrow">▼</span>
-    </div>
-    <div class="card-content">
+      <h3 style="margin-top:16px;">Recommended Gearing</h3>
       <div class="scroll-container">
         <table id="recommended">
           <thead>
             <tr>
               <th>Spur</th>
               <th>Pinion</th>
-              <th>Total</th>
-              <th>Rollout</th>
-              <th>Δ to Desired</th>
+              <th>Total Teeth</th>
+              <th>Rollout (in)</th>
+              <th>Δ from Desired</th>
             </tr>
           </thead>
-          <tbody></tbody>
+          <tbody>
+            <!-- built by JS -->
+          </tbody>
         </table>
       </div>
     </div>
