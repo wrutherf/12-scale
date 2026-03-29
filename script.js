@@ -430,3 +430,243 @@ document.querySelectorAll(".collapsible .card-header").forEach(header => {
     header.parentElement.classList.toggle("collapsed");
   });
 });
+// ---------- HYBRID TIRE SYSTEM ----------
+
+const TIRE_LS_KEY = "tireDataHybrid";
+
+// default thresholds if JSON missing
+const defaultTireData = {
+  thresholds: {
+    new_min: 40.5,
+    cut_min: 40.0,
+    old_min: 39.7
+  },
+  overrides: {},
+  metadata: {}
+};
+
+// basic tire list (you can expand this)
+const baseTireDiameters = [
+  41.00, 40.95, 40.90, 40.85, 40.80, 40.75, 40.70,
+  40.65, 40.60, 40.55, 40.50, 40.45, 40.40, 40.35,
+  40.30, 40.25, 40.20, 40.15, 40.10, 40.05, 40.00,
+  39.95, 39.90, 39.85, 39.80, 39.75, 39.70, 39.65,
+  39.60
+];
+
+function loadTireDataFromLocalStorage() {
+  const raw = localStorage.getItem(TIRE_LS_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function saveTireDataToLocalStorage(data) {
+  localStorage.setItem(TIRE_LS_KEY, JSON.stringify(data));
+}
+
+async function loadTireDataJson() {
+  try {
+    const res = await fetch("tireData.json", { cache: "no-cache" });
+    if (!res.ok) throw new Error("No tireData.json");
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+function getEffectiveTireData() {
+  // 1) try localStorage
+  const ls = loadTireDataFromLocalStorage();
+  if (ls) return ls;
+
+  // 2) fallback to default; JSON load happens async
+  return structuredClone(defaultTireData);
+}
+
+function classifyTire(diameter, data) {
+  const d = parseFloat(diameter.toFixed(2));
+  const key = d.toFixed(2);
+
+  // override first
+  if (data.overrides && data.overrides[key]) {
+    return data.overrides[key];
+  }
+
+  // automatic thresholds
+  const { new_min, cut_min, old_min } = data.thresholds;
+  if (d >= new_min) return "NEW";
+  if (d >= cut_min) return "CUT";
+  if (d >= old_min) return "OLD";
+  return "DO_NOT_USE";
+}
+
+function buildTireTable(data) {
+  const tbody = document.querySelector("#tireTable tbody");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+
+  baseTireDiameters.forEach(mm => {
+    const mmFixed = mm.toFixed(2);
+    const inches = (mm / 25.4).toFixed(3);
+    const status = classifyTire(mm, data);
+
+    const tr = document.createElement("tr");
+    tr.dataset.mm = mmFixed;
+    tr.classList.add("tire-status-" + status);
+
+    const tdMm = document.createElement("td");
+    tdMm.textContent = mmFixed;
+
+    const tdIn = document.createElement("td");
+    tdIn.textContent = inches;
+
+    const tdStatus = document.createElement("td");
+    const select = document.createElement("select");
+    select.className = "tire-status-select";
+
+    const options = ["AUTO", "NEW", "CUT", "OLD", "DO_NOT_USE"];
+    options.forEach(opt => {
+      const o = document.createElement("option");
+      o.value = opt;
+      o.textContent = opt === "DO_NOT_USE" ? "DO NOT USE" : opt;
+      select.appendChild(o);
+    });
+
+    // set initial dropdown value
+    const key = mmFixed;
+    if (data.overrides && data.overrides[key]) {
+      select.value = data.overrides[key];
+    } else {
+      select.value = "AUTO";
+    }
+
+    select.addEventListener("change", () => {
+      const current = getEffectiveTireData();
+      const val = select.value;
+
+      if (val === "AUTO") {
+        delete current.overrides[key];
+      } else {
+        current.overrides[key] = val;
+      }
+
+      saveTireDataToLocalStorage(current);
+      // re-render to update colors
+      buildTireTable(current);
+      applyTireFilter();
+    });
+
+    tdStatus.appendChild(select);
+
+    tr.appendChild(tdMm);
+    tr.appendChild(tdIn);
+    tr.appendChild(tdStatus);
+
+    tbody.appendChild(tr);
+  });
+}
+
+function applyTireFilter() {
+  const filterInput = document.getElementById("tireFilter");
+  const tbody = document.querySelector("#tireTable tbody");
+  if (!filterInput || !tbody) return;
+
+  const q = filterInput.value.trim().toLowerCase();
+  Array.from(tbody.rows).forEach(row => {
+    const mm = row.cells[0].textContent.toLowerCase();
+    const inch = row.cells[1].textContent.toLowerCase();
+    row.style.display = (!q || mm.includes(q) || inch.includes(q)) ? "" : "none";
+  });
+}
+
+function setupTireFilter() {
+  const filterInput = document.getElementById("tireFilter");
+  if (!filterInput) return;
+  filterInput.addEventListener("input", applyTireFilter);
+}
+
+function setupTireExportImport() {
+  const exportBtn = document.getElementById("exportTireJson");
+  const importInput = document.getElementById("importTireJson");
+  const resetBtn = document.getElementById("resetTireOverrides");
+
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      const data = getEffectiveTireData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "tireData.json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  if (importInput) {
+    importInput.addEventListener("change", () => {
+      const file = importInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const data = JSON.parse(e.target.result);
+          saveTireDataToLocalStorage(data);
+          buildTireTable(data);
+          applyTireFilter();
+        } catch {
+          alert("Invalid JSON file.");
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // clicking label triggers file input; already wired via HTML
+  }
+
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      if (!confirm("Reset all tire overrides to defaults?")) return;
+      localStorage.removeItem(TIRE_LS_KEY);
+      const data = structuredClone(defaultTireData);
+      saveTireDataToLocalStorage(data);
+      buildTireTable(data);
+      applyTireFilter();
+    });
+  }
+}
+
+function setupTireCollapsible() {
+  document.querySelectorAll(".collapsible .card-header").forEach(header => {
+    header.addEventListener("click", () => {
+      header.parentElement.classList.toggle("collapsed");
+    });
+  });
+}
+
+// init only on tires.html
+document.addEventListener("DOMContentLoaded", async () => {
+  const tireTable = document.getElementById("tireTable");
+  if (!tireTable) return; // not on tires page
+
+  setupTireCollapsible();
+
+  let data = loadTireDataFromLocalStorage();
+  if (!data) {
+    const jsonData = await loadTireDataJson();
+    data = jsonData || structuredClone(defaultTireData);
+    saveTireDataToLocalStorage(data);
+  }
+
+  buildTireTable(data);
+  setupTireFilter();
+  setupTireExportImport();
+  applyTireFilter();
+});
