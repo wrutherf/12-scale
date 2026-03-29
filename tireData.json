@@ -4,16 +4,32 @@
     "cut_min": 40.0,
     "old_min": 39.7
   },
-  "overrides": {
-    "40.85": "CUT",
-    "40.30": "OLD",
-    "39.65": "DO_NOT_USE"
-  },
-  "metadata": {
-    "40.85": {
-      "notes": "Best tire for carpet",
-      "batch": "B12",
-      "brand": "CRC"
+  "overrides": {},
+  "metadata": {},
+  "racers": {
+    "William": {
+      "tire_sets": {
+        "12": {
+          "identifier": "12",
+          "LH": {
+            "measured": 40.85,
+            "status": "CUT",
+            "wear": 78,
+            "uses": 2,
+            "last_used": "2026-03-28"
+          },
+          "RH": {
+            "measured": 40.80,
+            "status": "CUT",
+            "wear": 85,
+            "uses": 1,
+            "last_used": "2026-03-28"
+          },
+          "rotation_history": [],
+          "notes": "Batch B12, CRC"
+        }
+      }
     }
-  }
+  },
+  "history": []
 }
