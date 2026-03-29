@@ -64,19 +64,19 @@ function interpretDesiredRollout() {
   const label = $("desiredRolloutUnits");
 
   if (isNaN(raw)) {
-    label.textContent = "";
+    if (label) label.textContent = "";
     return null;
   }
 
-  // <10 → inches
   if (raw < 10) {
-    label.textContent = `Interpreted as: ${raw.toFixed(3)} in`;
+    if (label) label.textContent = `Interpreted as: ${raw.toFixed(3)} in`;
     return raw;
   }
 
-  // ≥10 → mm
   const inches = raw / 25.4;
-  label.textContent = `Interpreted as: ${raw.toFixed(2)} mm → ${inches.toFixed(3)} in`;
+  if (label) {
+    label.textContent = `Interpreted as: ${raw.toFixed(2)} mm → ${inches.toFixed(3)} in`;
+  }
   return inches;
 }
 
@@ -85,9 +85,7 @@ function readInputs() {
   const pinion = parseInt($("pinion")?.value, 10) || DEFAULT_PINION;
   const tire = parseFloat($("tire")?.value) || 40.0;
   const car = $("car")?.value || "a12x";
-
   const desiredInches = interpretDesiredRollout();
-
   return { spur, pinion, tire, car, desired: desiredInches };
 }
 
@@ -109,6 +107,18 @@ function updateTireConvertedDisplay() {
   }
   const inches = mmToInches(mm);
   out.textContent = `${inches.toFixed(3)} in`;
+}
+
+function markTireManualOverride() {
+  const indicator = $("tireManualIndicator");
+  if (!indicator) return;
+  const tireInput = $("tire");
+  const mm = parseFloat(tireInput.value);
+  if (!mm || isNaN(mm)) {
+    indicator.textContent = "";
+    return;
+  }
+  indicator.textContent = "Manual override";
 }
 
 // =========================
@@ -270,7 +280,7 @@ function buildRecommendedTable() {
     return Math.abs(a.delta) - Math.abs(b.delta);
   });
 
-  rows.forEach(r => {
+  rows.forEach((r, index) => {
     const tr = document.createElement("tr");
 
     const tdSpur = document.createElement("td");
@@ -294,6 +304,10 @@ function buildRecommendedTable() {
     tr.appendChild(tdTotal);
     tr.appendChild(tdRollout);
     tr.appendChild(tdDelta);
+
+    if (index === 0 && r.delta != null) {
+      tr.classList.add("best-recommendation");
+    }
 
     tr.addEventListener("click", () => {
       currentSpur = r.spur;
@@ -409,7 +423,10 @@ const defaultTireData = {
         last_used: "2026-03-28"
       },
       rotation_history: [],
-      notes: "Batch B12, CRC"
+      notes: "Batch B12, CRC",
+      batch: "B12",
+      compound: "CRC",
+      brand: "CRC"
     }
   },
   history: []
@@ -494,36 +511,8 @@ function ensureRacerExists(name) {
 // =========================
 
 function buildRacerSelects() {
-  const historyRacerFilter = $("historyRacerFilter");
-  const logRacer = $("logRacer");
   const calcRacerSelect = $("calcRacerSelect");
-  const tireSetRacerFilter = $("tireSetRacerFilter");
-
   const racerNames = Object.keys(tireData.racers || {}).sort();
-
-  if (historyRacerFilter) {
-    historyRacerFilter.innerHTML = "";
-    const allOpt = document.createElement("option");
-    allOpt.value = "ALL";
-    allOpt.textContent = "All";
-    historyRacerFilter.appendChild(allOpt);
-    racerNames.forEach(r => {
-      const opt = document.createElement("option");
-      opt.value = r;
-      opt.textContent = r;
-      historyRacerFilter.appendChild(opt);
-    });
-  }
-
-  if (logRacer) {
-    logRacer.innerHTML = "";
-    racerNames.forEach(r => {
-      const opt = document.createElement("option");
-      opt.value = r;
-      opt.textContent = r;
-      logRacer.appendChild(opt);
-    });
-  }
 
   if (calcRacerSelect) {
     calcRacerSelect.innerHTML = "";
@@ -534,26 +523,77 @@ function buildRacerSelects() {
       calcRacerSelect.appendChild(opt);
     });
   }
+}
 
-  if (tireSetRacerFilter) {
-    tireSetRacerFilter.innerHTML = "";
-    const allOpt = document.createElement("option");
-    allOpt.value = "ALL";
-    allOpt.textContent = "All";
-    tireSetRacerFilter.appendChild(allOpt);
-    racerNames.forEach(r => {
-      const opt = document.createElement("option");
-      opt.value = r;
-      opt.textContent = r;
-      tireSetRacerFilter.appendChild(opt);
-    });
+// =========================
+// CALC TIRE SET SELECT
+// =========================
+
+function buildCalcTireSetSelect() {
+  const select = $("calcTireSetSelect");
+  if (!select) return;
+
+  select.innerHTML = "";
+  const sets = tireData.tire_sets || {};
+  const ids = Object.keys(sets).sort();
+
+  ids.forEach(id => {
+    const set = sets[id];
+    const opt = document.createElement("option");
+    opt.value = id;
+    const lh = set.LH || {};
+    const rh = set.RH || {};
+    opt.textContent = `${set.identifier || id} (LH: ${lh.measured ?? "?"}, RH: ${rh.measured ?? "?"})`;
+    select.appendChild(opt);
+  });
+}
+
+function applySelectedTireToCalculator() {
+  const setId = $("calcTireSetSelect")?.value;
+  const side = $("calcTireSideSelect")?.value || "LH";
+  if (!setId || !tireData || !tireData.tire_sets[setId]) return;
+
+  const set = tireData.tire_sets[setId];
+  const sideData = set[side] || {};
+  if (sideData.measured) {
+    const tireInput = $("tire");
+    if (tireInput) {
+      tireInput.value = sideData.measured;
+      updateTireConvertedDisplay();
+      markTireManualOverride();
+      buildLocalTable();
+      buildRecommendedTable();
+    }
   }
 }
 
 // =========================
-// TIRE SET TABLE (GLOBAL)
+// INIT + BINDINGS
 // =========================
 
-function buildTireSetTable() {
-  const tbody = document.querySelector("#tireSetTable tbody");
-  if (!tbody
+async function initApp() {
+  setupCollapsibleCards();
+  setupKeyboardNavigation();
+  setupCalculatorInputs();
+
+  await ensureTireDataLoaded();
+  buildRacerSelects();
+  buildCalcTireSetSelect();
+
+  const calcTireSetSelect = $("calcTireSetSelect");
+  const calcTireSideSelect = $("calcTireSideSelect");
+
+  if (calcTireSetSelect) {
+    calcTireSetSelect.addEventListener("change", applySelectedTireToCalculator);
+  }
+  if (calcTireSideSelect) {
+    calcTireSideSelect.addEventListener("change", applySelectedTireToCalculator);
+  }
+
+  updateTeethRangeDisplay();
+  updateTireConvertedDisplay();
+  buildLocalTable();
+  buildRecommendedTable();
+}
+
+document.addEventListener("DOMContentLoaded", initApp);
