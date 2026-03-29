@@ -1,35 +1,46 @@
 {
-  "thresholds": {
-    "new_min": 40.5,
-    "cut_min": 40.0,
-    "old_min": 39.7
-  },
-  "overrides": {},
-  "metadata": {},
+  "thresholds": { ... },
+  "overrides": { ... },
+  "metadata": { ... },
+
   "racers": {
-    "William": {
-      "tire_sets": {
-        "12": {
-          "identifier": "12",
-          "LH": {
-            "measured": 40.85,
-            "status": "CUT",
-            "wear": 78,
-            "uses": 2,
-            "last_used": "2026-03-28"
-          },
-          "RH": {
-            "measured": 40.8,
-            "status": "CUT",
-            "wear": 85,
-            "uses": 1,
-            "last_used": "2026-03-28"
-          },
-          "rotation_history": [],
-          "notes": "Batch B12, CRC"
-        }
-      }
+    "William": {},
+    "John": {}
+  },
+
+  "tire_sets": {
+    "12": {
+      "identifier": "12",
+      "LH": {
+        "measured": 40.85,
+        "status": "CUT",
+        "wear": 78,
+        "uses": 2,
+        "last_used": "2026-03-28"
+      },
+      "RH": {
+        "measured": 40.80,
+        "status": "CUT",
+        "wear": 85,
+        "uses": 1,
+        "last_used": "2026-03-28"
+      },
+      "rotation_history": [],
+      "notes": "Batch B12, CRC"
     }
   },
-  "history": []
+
+  "history": [
+    {
+      "racer": "William",
+      "set_id": "12",
+      "side": "LH",
+      "date": "2026-03-28",
+      "event": "Club Night",
+      "track": "CRC Black Carpet",
+      "grip": "High",
+      "rotation": "None",
+      "notes": "Stable, slight push mid-corner"
+    }
+  ]
 }
