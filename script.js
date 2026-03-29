@@ -1,440 +1,378 @@
-// CAR RULES
-const cars = {
-  a12: { min: 112, max: 120 },
-  a12x: { min: 112, max: 125 }
-};
+// =========================
+// ROLLOUT CALCULATOR LOGIC
+// =========================
 
-// Soft limits for virtual map
-const SPUR_MIN_SOFT = 20;
-const SPUR_MAX_SOFT = 120;
-const PINION_MIN_SOFT = 10;
-const PINION_MAX_SOFT = 80;
+// --- Constants / defaults ---
+const DEFAULT_SPUR = 66;
+const DEFAULT_PINION = 50;
+const MIN_SPUR = 60;
+const MAX_SPUR = 80;
+const MIN_PINION = 40;
+const MAX_PINION = 60;
 
-// Viewport half-span (±5)
-const SPAN = 5;
+let currentSpur = DEFAULT_SPUR;
+let currentPinion = DEFAULT_PINION;
+let cursorSpur = DEFAULT_SPUR;
+let cursorPinion = DEFAULT_PINION;
 
-// ELEMENTS
-const spurEl = document.getElementById("spur");
-const pinionEl = document.getElementById("pinion");
-const tireEl = document.getElementById("tire");
-const carEl = document.getElementById("car");
-
-const tireConverted = document.getElementById("tireConverted");
-const teethRangeEl = document.getElementById("teethRange");
-
-const localBody = document.getElementById("localBody");
-const localHeadRow = document.getElementById("localHeadRow");
-
-const desiredRolloutEl = document.getElementById("desiredRollout");
-const recommendedBody = document.querySelector("#recommended tbody");
-const centerBtn = document.getElementById("centerBtn");
-
-// Cursor state (preview)
-let cursorSpur = parseInt(spurEl.value, 10);
-let cursorPinion = parseInt(pinionEl.value, 10);
-
-// UNIT DETECTION
-function detectUnits(tire) {
-  if (tire > 37) return "mm";
-  if (tire < 2) return "in";
-  alert("Tire diameter between 2 and 37 is ambiguous. Enter mm (>37) or inches (<2).");
-  return "invalid";
+// --- Helpers ---
+function mmToInches(mm) {
+  return mm / 25.4;
 }
 
-// ROLLOUT CALCULATION
-function rolloutFromGears(spur, pinion, tire) {
-  const units = detectUnits(tire);
-  if (units === "invalid") return { value: NaN, units };
-
-  let tireMm = tire;
-  if (units === "in") tireMm = tire * 25.4;
-
-  const rolloutMm = Math.PI * tireMm * (pinion / spur);
-
-  if (units === "mm") return { value: rolloutMm, units };
-  return { value: rolloutMm / 25.4, units };
+function computeRollout(spur, pinion, tireMm) {
+  if (!spur || !pinion || !tireMm) return null;
+  const ratio = spur / pinion;
+  const circumferenceIn = mmToInches(tireMm) * Math.PI;
+  return circumferenceIn / ratio;
 }
 
-// TIRE DUAL-UNIT DISPLAY
-function updateTireConversion() {
-  const val = parseFloat(tireEl.value);
-  if (!val || val <= 0) {
-    tireConverted.textContent = "";
+function formatRollout(value) {
+  if (value == null || isNaN(value)) return "";
+  return value.toFixed(3);
+}
+
+function getCarTeethRange(car) {
+  // simple example ranges; adjust as needed
+  if (car === "a12x") {
+    return { min: 100, max: 150 };
+  }
+  return { min: 90, max: 140 };
+}
+
+function totalTeeth(spur, pinion) {
+  return spur + pinion;
+}
+
+// --- DOM helpers ---
+function $(id) {
+  return document.getElementById(id);
+}
+
+// --- Inputs / state sync ---
+function readInputs() {
+  const spur = parseInt($("spur").value, 10) || DEFAULT_SPUR;
+  const pinion = parseInt($("pinion").value, 10) || DEFAULT_PINION;
+  const tire = parseFloat($("tire").value) || 40.0;
+  const car = $("car").value || "a12";
+  const desired = parseFloat($("desiredRollout").value) || null;
+  return { spur, pinion, tire, car, desired };
+}
+
+function updateTeethRangeDisplay() {
+  const { car } = readInputs();
+  const range = getCarTeethRange(car);
+  const el = $("teethRange");
+  if (el) {
+    el.textContent = `${range.min}–${range.max} total teeth`;
+  }
+}
+
+function updateTireConvertedDisplay() {
+  const tireInput = $("tire");
+  const out = $("tireConverted");
+  if (!tireInput || !out) return;
+  const mm = parseFloat(tireInput.value);
+  if (!mm || isNaN(mm)) {
+    out.textContent = "";
     return;
   }
-
-  const units = detectUnits(val);
-  if (units === "invalid") {
-    tireConverted.textContent = "";
-    return;
-  }
-
-  if (units === "mm") {
-    const inches = val / 25.4;
-    tireConverted.textContent = `${inches.toFixed(3)} in`;
-  } else {
-    const mm = val * 25.4;
-    tireConverted.textContent = `${mm.toFixed(2)} mm`;
-  }
+  const inches = mmToInches(mm);
+  out.textContent = `${inches.toFixed(3)} in`;
 }
 
-// TEETH RANGE DISPLAY
-function updateTeethRange() {
-  const car = cars[carEl.value];
-  teethRangeEl.textContent = `${car.min}–${car.max}`;
-}
-
-// MAIN UPDATE (COMMITTED GEARING)
-function update() {
-  updateTireConversion();
-  updateTeethRange();
-
-  buildLocalTable();
-  buildRecommended();
-}
-
-document.querySelectorAll("select").forEach(el => {
-  el.addEventListener("input", update);
-});
-
-document.querySelectorAll("input").forEach(el => {
-  if (el.id !== "desiredRollout") {
-    el.addEventListener("input", update);
-  }
-});
-
-// SCROLL-TO-ADJUST INPUTS ONLY
-function addScrollAdjust(el, step) {
-  el.addEventListener("wheel", e => {
-    e.preventDefault();
-    const dir = e.deltaY < 0 ? 1 : -1;
-    el.value = parseFloat(el.value || "0") + step * dir;
-    if (el === tireEl) {
-      el.value = parseFloat(el.value).toFixed(3);
-    }
-    update();
-  });
-}
-
-addScrollAdjust(spurEl, 1);
-addScrollAdjust(pinionEl, 1);
-
-tireEl.addEventListener("wheel", e => {
-  e.preventDefault();
-  const val = parseFloat(tireEl.value || "0");
-  const units = detectUnits(val);
-  if (units === "invalid") return;
-
-  const step = units === "mm" ? 0.05 : 0.005;
-  const dir = e.deltaY < 0 ? 1 : -1;
-
-  tireEl.value = (val + step * dir).toFixed(3);
-  update();
-});
-
-// LOCALIZED CURSOR-CENTERED TABLE
+// --- Local gearing map ---
 function buildLocalTable() {
-  const spur0 = parseInt(spurEl.value, 10);
-  const pinion0 = parseInt(pinionEl.value, 10);
-  const tire = parseFloat(tireEl.value);
-  const car = cars[carEl.value];
+  const headRow = $("localHeadRow");
+  const body = $("localBody");
+  if (!headRow || !body) return;
 
-  const units = detectUnits(tire);
-  if (units === "invalid") return;
+  const { tire, car, desired } = readInputs();
+  const range = getCarTeethRange(car);
 
-  // Clamp cursor to soft limits
-  cursorSpur = Math.max(SPUR_MIN_SOFT, Math.min(SPUR_MAX_SOFT, cursorSpur));
-  cursorPinion = Math.max(PINION_MIN_SOFT, Math.min(PINION_MAX_SOFT, cursorPinion));
-
-  const spurMin = Math.max(SPUR_MIN_SOFT, cursorSpur - SPAN);
-  const spurMax = Math.min(SPUR_MAX_SOFT, cursorSpur + SPAN);
-  const pinionMin = Math.max(PINION_MIN_SOFT, cursorPinion - SPAN);
-  const pinionMax = Math.min(PINION_MAX_SOFT, cursorPinion + SPAN);
-
-  // Header
-  localHeadRow.innerHTML = "";
+  headRow.innerHTML = "";
   const corner = document.createElement("th");
+  corner.className = "sticky-corner";
   corner.textContent = "Spur ↓ / Pinion →";
-  corner.classList.add("sticky-corner");
-  localHeadRow.appendChild(corner);
+  headRow.appendChild(corner);
 
-  for (let p = pinionMin; p <= pinionMax; p++) {
+  for (let p = MIN_PINION; p <= MAX_PINION; p++) {
     const th = document.createElement("th");
     th.textContent = p;
-    localHeadRow.appendChild(th);
+    headRow.appendChild(th);
   }
 
-  // Body
-  localBody.innerHTML = "";
-  for (let s = spurMin; s <= spurMax; s++) {
-    const row = document.createElement("tr");
-    const labelCell = document.createElement("td");
-    labelCell.innerHTML = `<strong>${s}</strong>`;
-    row.appendChild(labelCell);
+  body.innerHTML = "";
 
-    // Spur header highlight
-    labelCell.classList.remove("header-highlight");
-    if (s === cursorSpur) {
-      labelCell.classList.add("header-highlight");
-    }
+  for (let s = MIN_SPUR; s <= MAX_SPUR; s++) {
+    const tr = document.createElement("tr");
 
-    for (let p = pinionMin; p <= pinionMax; p++) {
-      const total = s + p;
-      const { value: rVal, units: rUnits } = rolloutFromGears(s, p, tire);
-      const legal = total >= car.min && total <= car.max;
+    const spurCell = document.createElement("td");
+    spurCell.textContent = s;
+    tr.appendChild(spurCell);
 
-      const cell = document.createElement("td");
+    for (let p = MIN_PINION; p <= MAX_PINION; p++) {
+      const td = document.createElement("td");
+      const total = totalTeeth(s, p);
+      const rollout = computeRollout(s, p, tire);
+      td.textContent = rollout ? formatRollout(rollout) : "";
 
-      // Dual-unit content
-      let metricVal, imperialVal;
-      if (rUnits === "mm") {
-        metricVal = rVal;
-        imperialVal = rVal / 25.4;
-      } else {
-        imperialVal = rVal;
-        metricVal = rVal * 25.4;
+      const legal = total >= range.min && total <= range.max;
+      if (legal) td.classList.add("legal-gear");
+      else td.classList.add("illegal-gear");
+
+      if (s === currentSpur && p === currentPinion) {
+        td.classList.add("current-gear");
       }
-
-      const wrapper = document.createElement("div");
-      wrapper.className = "cell-rollout";
-
-      const metricSpan = document.createElement("span");
-      metricSpan.className = "metric";
-      metricSpan.textContent = isFinite(metricVal) ? metricVal.toFixed(2) : "—";
-
-      const imperialSpan = document.createElement("span");
-      imperialSpan.className = "imperial";
-      imperialSpan.textContent = isFinite(imperialVal) ? imperialVal.toFixed(3) : "—";
-
-      wrapper.appendChild(metricSpan);
-      wrapper.appendChild(imperialSpan);
-      cell.appendChild(wrapper);
-
-      if (s === spur0 && p === pinion0) {
-        cell.classList.add("current-gear");
-      } else if (legal) {
-        cell.classList.add("legal-gear");
-      } else {
-        cell.classList.add("illegal-gear");
-      }
-
       if (s === cursorSpur && p === cursorPinion) {
-        cell.classList.add("cursor-cell");
+        td.classList.add("cursor-cell");
       }
 
-      cell.addEventListener("click", () => {
+      td.dataset.spur = s;
+      td.dataset.pinion = p;
+
+      td.addEventListener("click", () => {
         cursorSpur = s;
         cursorPinion = p;
-        spurEl.value = s;
-        pinionEl.value = p;
-        update();
+        currentSpur = s;
+        currentPinion = p;
+        $("spur").value = s;
+        $("pinion").value = p;
+        buildLocalTable();
+        buildRecommendedTable();
       });
 
-      row.appendChild(cell);
+      tr.appendChild(td);
     }
 
-    localBody.appendChild(row);
+    body.appendChild(tr);
   }
 
-  // Pinion header highlight
-  Array.from(localHeadRow.children).forEach((th, idx) => {
+  highlightHeaders();
+}
+
+function highlightHeaders() {
+  const headRow = $("localHeadRow");
+  const body = $("localBody");
+  if (!headRow || !body) return;
+
+  Array.from(headRow.children).forEach(th => {
     th.classList.remove("header-highlight");
-    if (idx > 0) {
-      const pinionVal = pinionMin + (idx - 1);
-      if (pinionVal === cursorPinion) {
-        th.classList.add("header-highlight");
+  });
+  Array.from(body.rows).forEach(row => {
+    row.cells[0].classList.remove("header-highlight");
+  });
+
+  const spurIndex = cursorSpur - MIN_SPUR + 1;
+  const pinionIndex = cursorPinion - MIN_PINION + 1;
+
+  if (headRow.children[pinionIndex]) {
+    headRow.children[pinionIndex].classList.add("header-highlight");
+  }
+  if (body.rows[cursorSpur - MIN_SPUR]) {
+    body.rows[cursorSpur - MIN_SPUR].cells[0].classList.add("header-highlight");
+  }
+}
+
+function centerOnCurrentGearing() {
+  cursorSpur = currentSpur;
+  cursorPinion = currentPinion;
+  buildLocalTable();
+}
+
+// --- Keyboard navigation ---
+function setupKeyboardNavigation() {
+  document.addEventListener("keydown", e => {
+    const table = $("localTable");
+    if (!table) return;
+
+    let moved = false;
+    if (e.key === "ArrowUp") {
+      if (cursorSpur > MIN_SPUR) {
+        cursorSpur--;
+        moved = true;
       }
+    } else if (e.key === "ArrowDown") {
+      if (cursorSpur < MAX_SPUR) {
+        cursorSpur++;
+        moved = true;
+      }
+    } else if (e.key === "ArrowLeft") {
+      if (cursorPinion > MIN_PINION) {
+        cursorPinion--;
+        moved = true;
+      }
+    } else if (e.key === "ArrowRight") {
+      if (cursorPinion < MAX_PINION) {
+        cursorPinion++;
+        moved = true;
+      }
+    } else if (e.key === "Enter") {
+      currentSpur = cursorSpur;
+      currentPinion = cursorPinion;
+      $("spur").value = currentSpur;
+      $("pinion").value = currentPinion;
+      buildLocalTable();
+      buildRecommendedTable();
+      return;
+    }
+
+    if (moved) {
+      e.preventDefault();
+      buildLocalTable();
     }
   });
 }
 
-// KEYBOARD NAVIGATION (CURSOR) – INVERTED
-function handleCursorKeys(e) {
-  const key = e.key;
+// --- Recommended gearing ---
+function buildRecommendedTable() {
+  const table = $("recommended");
+  if (!table) return;
+  const tbody = table.querySelector("tbody");
+  tbody.innerHTML = "";
 
-  // Ignore if an input is focused
-  const active = document.activeElement;
-  if (active && (active.tagName === "INPUT" || active.tagName === "SELECT")) return;
+  const { tire, car, desired } = readInputs();
+  const range = getCarTeethRange(car);
 
-  if (key === "ArrowUp") {
-    e.preventDefault();
-    cursorSpur = Math.max(SPUR_MIN_SOFT, cursorSpur - 1);
-    buildLocalTable();
-  } else if (key === "ArrowDown") {
-    e.preventDefault();
-    cursorSpur = Math.min(SPUR_MAX_SOFT, cursorSpur + 1);
-    buildLocalTable();
-  } else if (key === "ArrowLeft") {
-    e.preventDefault();
-    cursorPinion = Math.min(PINION_MAX_SOFT, cursorPinion + 1);
-    buildLocalTable();
-  } else if (key === "ArrowRight") {
-    e.preventDefault();
-    cursorPinion = Math.max(PINION_MIN_SOFT, cursorPinion - 1);
-    buildLocalTable();
-  } else if (key === "Enter") {
-    e.preventDefault();
-    spurEl.value = cursorSpur;
-    pinionEl.value = cursorPinion;
-    update();
-  }
-}
+  const rows = [];
+  for (let s = MIN_SPUR; s <= MAX_SPUR; s++) {
+    for (let p = MIN_PINION; p <= MAX_PINION; p++) {
+      const total = totalTeeth(s, p);
+      const legal = total >= range.min && total <= range.max;
+      if (!legal) continue;
+      const rollout = computeRollout(s, p, tire);
+      if (!rollout) continue;
 
-window.addEventListener("keydown", handleCursorKeys);
-
-// Center button: snap cursor to current gearing
-centerBtn.addEventListener("click", () => {
-  cursorSpur = parseInt(spurEl.value, 10);
-  cursorPinion = parseInt(pinionEl.value, 10);
-  buildLocalTable();
-});
-
-// RECOMMENDED GEARING (imperial-aware + car-limited)
-function buildRecommended() {
-  const desiredRaw = parseFloat(desiredRolloutEl.value);
-  const tire = parseFloat(tireEl.value);
-  const car = cars[carEl.value];
-
-  if (!desiredRaw || !tire) {
-    recommendedBody.innerHTML = "";
-    return;
-  }
-
-  // Determine desired rollout units
-  const desiredUnits = desiredRaw < 10 ? "in" : "mm";
-  const desired = desiredRaw;
-
-  // Determine tire units
-  const tireUnits = detectUnits(tire);
-  if (tireUnits === "invalid") return;
-
-  recommendedBody.innerHTML = "";
-  const list = [];
-
-  // Spur/pinion search ranges
-  const spurMin = 20;
-  const spurMax = 120;
-  const pinionMin = 10;
-  const pinionMax = 80;
-
-  for (let s = spurMin; s <= spurMax; s++) {
-    for (let p = pinionMin; p <= pinionMax; p++) {
-
-      const total = s + p;
-
-      // HARD FILTER: only show gearing inside the selected car's tooth range
-      if (total < car.min || total > car.max) continue;
-
-      const { value: rVal, units: rUnits } = rolloutFromGears(s, p, tire);
-
-      // Convert rollout to same units as desired
-      let rolloutConverted;
-      if (desiredUnits === rUnits) {
-        rolloutConverted = rVal;
-      } else if (desiredUnits === "mm" && rUnits === "in") {
-        rolloutConverted = rVal * 25.4;
-      } else if (desiredUnits === "in" && rUnits === "mm") {
-        rolloutConverted = rVal / 25.4;
+      let delta = null;
+      if (desired != null && !isNaN(desired)) {
+        const desiredIn = desired < 10 ? desired : desired; // already inches
+        delta = rollout - desiredIn;
       }
 
-      const diff = Math.abs(rolloutConverted - desired);
-
-      list.push({
-        s,
-        p,
-        total,
-        rollout: rolloutConverted,
-        diff
-      });
+      rows.push({ spur: s, pinion: p, total, rollout, delta });
     }
   }
 
-  // Sort by closeness
-  list.sort((a, b) => a.diff - b.diff);
+  rows.sort((a, b) => {
+    if (a.delta == null && b.delta == null) return 0;
+    if (a.delta == null) return 1;
+    if (b.delta == null) return -1;
+    return Math.abs(a.delta) - Math.abs(b.delta);
+  });
 
-  // Render top 40
-  recommendedBody.innerHTML = "";
-  list.slice(0, 40).forEach(m => {
-    const row = document.createElement("tr");
-    row.className = "legal-gear";
+  rows.forEach(r => {
+    const tr = document.createElement("tr");
 
-    row.innerHTML = `
-      <td>${m.s}</td>
-      <td>${m.p}</td>
-      <td>${m.total}</td>
-      <td>${desiredUnits === "mm" ? m.rollout.toFixed(2) : m.rollout.toFixed(3)}</td>
-      <td>${m.diff.toFixed(desiredUnits === "mm" ? 2 : 3)}</td>
-    `;
+    const tdSpur = document.createElement("td");
+    tdSpur.textContent = r.spur;
 
-    row.addEventListener("click", () => {
-      cursorSpur = m.s;
-      cursorPinion = m.p;
-      spurEl.value = m.s;
-      pinionEl.value = m.p;
-      update();
+    const tdPinion = document.createElement("td");
+    tdPinion.textContent = r.pinion;
+
+    const tdTotal = document.createElement("td");
+    tdTotal.textContent = r.total;
+
+    const tdRollout = document.createElement("td");
+    tdRollout.textContent = formatRollout(r.rollout);
+
+    const tdDelta = document.createElement("td");
+    tdDelta.textContent =
+      r.delta == null ? "" : (r.delta >= 0 ? "+" : "") + r.delta.toFixed(3);
+
+    tr.appendChild(tdSpur);
+    tr.appendChild(tdPinion);
+    tr.appendChild(tdTotal);
+    tr.appendChild(tdRollout);
+    tr.appendChild(tdDelta);
+
+    tr.addEventListener("click", () => {
+      currentSpur = r.spur;
+      currentPinion = r.pinion;
+      cursorSpur = r.spur;
+      cursorPinion = r.pinion;
+      $("spur").value = r.spur;
+      $("pinion").value = r.pinion;
+      buildLocalTable();
+      buildRecommendedTable();
     });
 
-    recommendedBody.appendChild(row);
+    tbody.appendChild(tr);
   });
 }
 
-desiredRolloutEl.addEventListener("input", buildRecommended);
+// --- Inputs wiring ---
+function setupInputs() {
+  const spur = $("spur");
+  const pinion = $("pinion");
+  const tire = $("tire");
+  const car = $("car");
+  const desired = $("desiredRollout");
+  const centerBtn = $("centerBtn");
 
-// INPUT ARROW KEY INCREMENTING
-function addArrowIncrement(el, getStep) {
-  el.addEventListener("keydown", e => {
-    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-      e.preventDefault();
-      e.stopPropagation();
-      const dir = e.key === "ArrowUp" ? 1 : -1;
-      const step = getStep();
-      const val = parseFloat(el.value || "0");
-      el.value = (val + step * dir).toFixed(
-        el === tireEl ? 3 :
-        el === desiredRolloutEl ? 2 : 0
-      );
-      if (el === spurEl || el === pinionEl || el === tireEl) {
-        update();
-      } else if (el === desiredRolloutEl) {
-        buildRecommended();
-      }
-    }
+  if (spur) {
+    spur.value = DEFAULT_SPUR;
+    spur.addEventListener("input", () => {
+      currentSpur = parseInt(spur.value, 10) || DEFAULT_SPUR;
+      cursorSpur = currentSpur;
+      buildLocalTable();
+      buildRecommendedTable();
+    });
+  }
+
+  if (pinion) {
+    pinion.value = DEFAULT_PINION;
+    pinion.addEventListener("input", () => {
+      currentPinion = parseInt(pinion.value, 10) || DEFAULT_PINION;
+      cursorPinion = currentPinion;
+      buildLocalTable();
+      buildRecommendedTable();
+    });
+  }
+
+  if (tire) {
+    tire.addEventListener("input", () => {
+      updateTireConvertedDisplay();
+      buildLocalTable();
+      buildRecommendedTable();
+    });
+  }
+
+  if (car) {
+    car.addEventListener("change", () => {
+      updateTeethRangeDisplay();
+      buildLocalTable();
+      buildRecommendedTable();
+    });
+  }
+
+  if (desired) {
+    desired.addEventListener("input", () => {
+      buildRecommendedTable();
+    });
+  }
+
+  if (centerBtn) {
+    centerBtn.addEventListener("click", () => {
+      centerOnCurrentGearing();
+    });
+  }
+}
+
+// --- Collapsible cards (shared) ---
+function setupCollapsibleCards() {
+  document.querySelectorAll(".collapsible .card-header").forEach(header => {
+    header.addEventListener("click", () => {
+      header.parentElement.classList.toggle("collapsed");
+    });
   });
 }
 
-addArrowIncrement(spurEl, () => 1);
-addArrowIncrement(pinionEl, () => 1);
-addArrowIncrement(tireEl, () => {
-  const val = parseFloat(tireEl.value || "0");
-  const units = detectUnits(val);
-  if (units === "mm") return 0.05;
-  if (units === "in") return 0.005;
-  return 0.05;
-});
-addArrowIncrement(desiredRolloutEl, () => 0.01);
-
-// INITIALIZE
-update();
-cursorSpur = parseInt(spurEl.value, 10);
-cursorPinion = parseInt(pinionEl.value, 10);
-buildLocalTable();
-
-// FULL SCRIPT.JS CONTENT (same as previously provided)
-// + collapsible card JS added at bottom
-
-// ... [existing script.js content unchanged] ...
-
-// COLLAPSIBLE CARDS
-document.querySelectorAll(".collapsible .card-header").forEach(header => {
-  header.addEventListener("click", () => {
-    header.parentElement.classList.toggle("collapsed");
-  });
-});
-// ---------- HYBRID TIRE SYSTEM ----------
+// =========================
+// HYBRID TIRE SYSTEM LOGIC
+// =========================
 
 const TIRE_LS_KEY = "tireDataHybrid";
 
-// default thresholds if JSON missing
 const defaultTireData = {
   thresholds: {
     new_min: 40.5,
@@ -445,13 +383,12 @@ const defaultTireData = {
   metadata: {}
 };
 
-// basic tire list (you can expand this)
 const baseTireDiameters = [
-  41.00, 40.95, 40.90, 40.85, 40.80, 40.75, 40.70,
-  40.65, 40.60, 40.55, 40.50, 40.45, 40.40, 40.35,
-  40.30, 40.25, 40.20, 40.15, 40.10, 40.05, 40.00,
-  39.95, 39.90, 39.85, 39.80, 39.75, 39.70, 39.65,
-  39.60
+  41.0, 40.95, 40.9, 40.85, 40.8, 40.75, 40.7,
+  40.65, 40.6, 40.55, 40.5, 40.45, 40.4, 40.35,
+  40.3, 40.25, 40.2, 40.15, 40.1, 40.05, 40.0,
+  39.95, 39.9, 39.85, 39.8, 39.75, 39.7, 39.65,
+  39.6
 ];
 
 function loadTireDataFromLocalStorage() {
@@ -478,25 +415,43 @@ async function loadTireDataJson() {
   }
 }
 
-function getEffectiveTireData() {
-  // 1) try localStorage
-  const ls = loadTireDataFromLocalStorage();
-  if (ls) return ls;
+function mergeTireData(base, incoming) {
+  const merged = structuredClone(base);
 
-  // 2) fallback to default; JSON load happens async
-  return structuredClone(defaultTireData);
+  if (incoming.thresholds) {
+    merged.thresholds = structuredClone(incoming.thresholds);
+  }
+
+  if (incoming.overrides) {
+    merged.overrides = {
+      ...merged.overrides,
+      ...incoming.overrides
+    };
+  }
+
+  if (incoming.metadata) {
+    merged.metadata = {
+      ...merged.metadata,
+      ...incoming.metadata
+    };
+  }
+
+  return merged;
+}
+
+function getEffectiveTireData() {
+  const ls = loadTireDataFromLocalStorage();
+  return ls ? ls : structuredClone(defaultTireData);
 }
 
 function classifyTire(diameter, data) {
   const d = parseFloat(diameter.toFixed(2));
   const key = d.toFixed(2);
 
-  // override first
   if (data.overrides && data.overrides[key]) {
     return data.overrides[key];
   }
 
-  // automatic thresholds
   const { new_min, cut_min, old_min } = data.thresholds;
   if (d >= new_min) return "NEW";
   if (d >= cut_min) return "CUT";
@@ -537,13 +492,8 @@ function buildTireTable(data) {
       select.appendChild(o);
     });
 
-    // set initial dropdown value
     const key = mmFixed;
-    if (data.overrides && data.overrides[key]) {
-      select.value = data.overrides[key];
-    } else {
-      select.value = "AUTO";
-    }
+    select.value = data.overrides[key] || "AUTO";
 
     select.addEventListener("change", () => {
       const current = getEffectiveTireData();
@@ -556,7 +506,6 @@ function buildTireTable(data) {
       }
 
       saveTireDataToLocalStorage(current);
-      // re-render to update colors
       buildTireTable(current);
       applyTireFilter();
     });
@@ -617,9 +566,11 @@ function setupTireExportImport() {
       const reader = new FileReader();
       reader.onload = e => {
         try {
-          const data = JSON.parse(e.target.result);
-          saveTireDataToLocalStorage(data);
-          buildTireTable(data);
+          const incoming = JSON.parse(e.target.result);
+          const current = getEffectiveTireData();
+          const merged = mergeTireData(current, incoming);
+          saveTireDataToLocalStorage(merged);
+          buildTireTable(merged);
           applyTireFilter();
         } catch {
           alert("Invalid JSON file.");
@@ -627,8 +578,6 @@ function setupTireExportImport() {
       };
       reader.readAsText(file);
     });
-
-    // clicking label triggers file input; already wired via HTML
   }
 
   if (resetBtn) {
@@ -643,30 +592,36 @@ function setupTireExportImport() {
   }
 }
 
-function setupTireCollapsible() {
-  document.querySelectorAll(".collapsible .card-header").forEach(header => {
-    header.addEventListener("click", () => {
-      header.parentElement.classList.toggle("collapsed");
-    });
-  });
-}
+// =========================
+// PAGE INITIALIZATION
+// =========================
 
-// init only on tires.html
 document.addEventListener("DOMContentLoaded", async () => {
-  const tireTable = document.getElementById("tireTable");
-  if (!tireTable) return; // not on tires page
+  setupCollapsibleCards();
 
-  setupTireCollapsible();
-
-  let data = loadTireDataFromLocalStorage();
-  if (!data) {
-    const jsonData = await loadTireDataJson();
-    data = jsonData || structuredClone(defaultTireData);
-    saveTireDataToLocalStorage(data);
+  // If main calculator elements exist, init calculator
+  if ($("localTable") && $("recommended")) {
+    setupInputs();
+    updateTeethRangeDisplay();
+    updateTireConvertedDisplay();
+    buildLocalTable();
+    buildRecommendedTable();
+    setupKeyboardNavigation();
   }
 
-  buildTireTable(data);
-  setupTireFilter();
-  setupTireExportImport();
-  applyTireFilter();
+  // If tire table exists, init tire system
+  const tireTable = document.getElementById("tireTable");
+  if (tireTable) {
+    let data = loadTireDataFromLocalStorage();
+    if (!data) {
+      const jsonData = await loadTireDataJson();
+      data = jsonData || structuredClone(defaultTireData);
+      saveTireDataToLocalStorage(data);
+    }
+
+    buildTireTable(data);
+    setupTireFilter();
+    setupTireExportImport();
+    applyTireFilter();
+  }
 });
