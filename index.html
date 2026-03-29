@@ -53,13 +53,13 @@
           <input type="number" id="pinion" step="1">
         </label>
 
-        <label>Tire Diameter (mm)
+        <label>Tire Diameter
           <input type="number" id="tire" step="0.01">
-          <span id="tireManualIndicator" style="font-size:0.75rem;color:#aaa;margin-top:2px;"></span>
-        </label>
-
-        <label>Tire Diameter (in)
-          <span id="tireConverted"></span>
+          <div class="dual-unit">
+            <span id="tirePrimary"></span>
+            <span id="tireSecondary" class="secondary-unit"></span>
+          </div>
+          <span id="tireManualIndicator" class="secondary-unit"></span>
         </label>
 
         <label>Car
@@ -103,7 +103,10 @@
       <div class="input-row inline">
         <label>Desired Rollout
           <input type="number" id="desiredRollout" step="0.001">
-          <span id="desiredRolloutUnits" style="font-size:0.75rem;color:#aaa;margin-top:2px;"></span>
+          <div class="dual-unit">
+            <span id="desiredPrimary"></span>
+            <span id="desiredSecondary" class="secondary-unit"></span>
+          </div>
         </label>
       </div>
 
@@ -114,8 +117,8 @@
               <th>Spur</th>
               <th>Pinion</th>
               <th>Total Teeth</th>
-              <th>Rollout (in)</th>
-              <th>Δ from Desired</th>
+              <th>Rollout</th>
+              <th>Δ from Desired (in)</th>
             </tr>
           </thead>
           <tbody></tbody>
