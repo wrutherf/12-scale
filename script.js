@@ -1,64 +1,36 @@
 /******************************************************
  *  ROLLOUT CALCULATOR — FULL REGENERATED VERSION
- *  PART 2 — Core Helpers + Dual‑Unit Engine
  ******************************************************/
 
-// =========================
-// BASIC DOM HELPERS
-// =========================
+/******************************************************
+ *  PART 1 — BASIC HELPERS
+ ******************************************************/
 
-function $(id) {
-  return document.getElementById(id);
-}
+function $(id) { return document.getElementById(id); }
+function text(id, v) { const el = $(id); if (el) el.textContent = v; }
+function html(id, v) { const el = $(id); if (el) el.innerHTML = v; }
 
-function text(id, value) {
-  const el = $(id);
-  if (el) el.textContent = value;
-}
+/******************************************************
+ *  PART 2 — UNIT CONVERSION + DUAL‑UNIT FORMATTERS
+ ******************************************************/
 
-function html(id, value) {
-  const el = $(id);
-  if (el) el.innerHTML = value;
-}
+function mmToIn(mm) { return mm / 25.4; }
+function inToMm(inches) { return inches * 25.4; }
 
-// =========================
-// UNIT CONVERSION
-// =========================
-
-function mmToIn(mm) {
-  return mm / 25.4;
-}
-
-function inToMm(inches) {
-  return inches * 25.4;
-}
-
-// =========================
-// DUAL‑UNIT FORMATTERS
-// =========================
-//
-// 1) formatDualUnitsInput() → shows units (for inputs)
-// 2) formatDualUnitsGrid()  → NO units (for grid + recommended table)
-//
-
-// For inputs (tire + desired rollout)
+// Inputs (show units)
 function formatDualUnitsInput(inches) {
   if (inches == null || isNaN(inches)) return { primary: "", secondary: "" };
-
   const mm = inToMm(inches);
-
   return {
     primary: `${inches.toFixed(3)} in`,
     secondary: `${mm.toFixed(2)} mm`
   };
 }
 
-// For grid + recommended table (NO units)
+// Grid + recommended table (NO units)
 function formatDualUnitsGrid(inches) {
   if (inches == null || isNaN(inches)) return "";
-
   const mm = inToMm(inches);
-
   return `
     <div class="dual-unit-cell">
       <div class="primary-unit">${inches.toFixed(3)}</div>
@@ -67,136 +39,78 @@ function formatDualUnitsGrid(inches) {
   `;
 }
 
-// =========================
-// ROLLOUT MATH
-// =========================
+/******************************************************
+ *  PART 3 — ROLLOUT MATH + INPUT INTERPRETATION
+ ******************************************************/
 
 function computeRollout(spur, pinion, tireMm) {
   if (!spur || !pinion || !tireMm) return null;
-
   const ratio = spur / pinion;
   const circumferenceIn = mmToIn(tireMm) * Math.PI;
-
   return circumferenceIn / ratio;
 }
 
-function totalTeeth(spur, pinion) {
-  return spur + pinion;
-}
+function totalTeeth(s, p) { return s + p; }
 
-// =========================
-// CAR TEETH RANGE (A12X FIXED)
-// =========================
-
+// Correct A12X range
 function getCarTeethRange(car) {
-  if (car === "a12x") {
-    return { min: 112, max: 125 };   // Correct A12X range
-  }
-  return { min: 90, max: 140 };      // Generic fallback
+  if (car === "a12x") return { min: 112, max: 125 };
+  return { min: 90, max: 140 };
 }
 
-// =========================
-// DUAL‑UNIT INPUT INTERPRETATION
-// =========================
-//
-// Rule:
-//   < 10  → inches
-//   ≥ 10 → mm
-//
-
-function interpretDualUnitInput(rawValue) {
-  const v = parseFloat(rawValue);
+// Interpret dual‑unit inputs
+function interpretDualUnitInput(raw) {
+  const v = parseFloat(raw);
   if (isNaN(v)) return { inches: null, mm: null, mode: null };
-
-  if (v < 10) {
-    return {
-      inches: v,
-      mm: inToMm(v),
-      mode: "in"
-    };
-  }
-
-  return {
-    inches: mmToIn(v),
-    mm: v,
-    mode: "mm"
-  };
+  if (v < 10) return { inches: v, mm: inToMm(v), mode: "in" };
+  return { inches: mmToIn(v), mm: v, mode: "mm" };
 }
 
-// =========================
-// TIRE DIAMETER INPUT HANDLING
-// =========================
+/******************************************************
+ *  PART 4 — INPUT HANDLING + DISPLAY
+ ******************************************************/
 
 function updateTireDualDisplay() {
   const raw = $("tire")?.value;
-  const outPrimary = $("tirePrimary");
-  const outSecondary = $("tireSecondary");
+  const outP = $("tirePrimary");
+  const outS = $("tireSecondary");
+  if (!raw || !outP || !outS) return;
 
-  if (!raw || !outPrimary || !outSecondary) return;
-
-  const { inches, mm } = interpretDualUnitInput(raw);
-
-  if (inches == null) {
-    outPrimary.textContent = "";
-    outSecondary.textContent = "";
-    return;
-  }
+  const { inches } = interpretDualUnitInput(raw);
+  if (inches == null) { outP.textContent = ""; outS.textContent = ""; return; }
 
   const f = formatDualUnitsInput(inches);
-  outPrimary.textContent = f.primary;
-  outSecondary.textContent = f.secondary;
+  outP.textContent = f.primary;
+  outS.textContent = f.secondary;
 }
 
 function markTireManualOverride() {
-  const indicator = $("tireManualIndicator");
-  if (!indicator) return;
-
+  const ind = $("tireManualIndicator");
+  if (!ind) return;
   const raw = $("tire")?.value;
-  if (!raw || isNaN(parseFloat(raw))) {
-    indicator.textContent = "";
-    return;
-  }
-
-  indicator.textContent = "Manual override";
+  ind.textContent = raw && !isNaN(parseFloat(raw)) ? "Manual override" : "";
 }
-
-// =========================
-// DESIRED ROLLOUT INPUT HANDLING
-// =========================
 
 function updateDesiredDualDisplay() {
   const raw = $("desiredRollout")?.value;
-  const primary = $("desiredPrimary");
-  const secondary = $("desiredSecondary");
-
-  if (!raw || !primary || !secondary) return;
+  const p = $("desiredPrimary");
+  const s = $("desiredSecondary");
+  if (!raw || !p || !s) return;
 
   const { inches } = interpretDualUnitInput(raw);
-
-  if (inches == null) {
-    primary.textContent = "";
-    secondary.textContent = "";
-    return;
-  }
+  if (inches == null) { p.textContent = ""; s.textContent = ""; return; }
 
   const f = formatDualUnitsInput(inches);
-  primary.textContent = f.primary;
-  secondary.textContent = f.secondary;
+  p.textContent = f.primary;
+  s.textContent = f.secondary;
 }
-
-// =========================
-// READ ALL CALCULATOR INPUTS
-// =========================
 
 function readInputs() {
   const spur = parseInt($("spur")?.value, 10) || 66;
   const pinion = parseInt($("pinion")?.value, 10) || 50;
 
-  const tireRaw = $("tire")?.value;
-  const desiredRaw = $("desiredRollout")?.value;
-
-  const tireParsed = interpretDualUnitInput(tireRaw);
-  const desiredParsed = interpretDualUnitInput(desiredRaw);
+  const tireParsed = interpretDualUnitInput($("tire")?.value);
+  const desiredParsed = interpretDualUnitInput($("desiredRollout")?.value);
 
   const car = $("car")?.value || "a12x";
 
@@ -211,84 +125,19 @@ function readInputs() {
   };
 }
 
-// =========================
-// TEETH RANGE DISPLAY
-// =========================
-
 function updateTeethRangeDisplay() {
   const { car } = readInputs();
-  const range = getCarTeethRange(car);
-  text("teethRange", `${range.min}–${range.max} total teeth`);
+  const r = getCarTeethRange(car);
+  text("teethRange", `${r.min}–${r.max} total teeth`);
 }
 
-// =========================
-// INPUT BINDINGS
-// =========================
-
-function setupCalculatorInputs() {
-  const tire = $("tire");
-  const desired = $("desiredRollout");
-  const spur = $("spur");
-  const pinion = $("pinion");
-  const car = $("car");
-
-  if (tire) {
-    tire.addEventListener("input", () => {
-      updateTireDualDisplay();
-      markTireManualOverride();
-      buildLocalTable();
-      buildRecommendedTable();
-    });
-  }
-
-  if (desired) {
-    desired.addEventListener("input", () => {
-      updateDesiredDualDisplay();
-      buildRecommendedTable();
-    });
-  }
-
-  if (spur) {
-    spur.addEventListener("input", () => {
-      buildLocalTable();
-      buildRecommendedTable();
-    });
-  }
-
-  if (pinion) {
-    pinion.addEventListener("input", () => {
-      buildLocalTable();
-      buildRecommendedTable();
-    });
-  }
-
-  if (car) {
-    car.addEventListener("change", () => {
-      updateTeethRangeDisplay();
-      buildLocalTable();
-      buildRecommendedTable();
-    });
-  }
-}
 /******************************************************
- *  PART 3 — LOCAL GEARING MAP + NAVIGATION
+ *  PART 5 — CENTERED LOCAL GEARING MAP (±3 WINDOW)
  ******************************************************/
 
-// Grid ranges
-const MIN_SPUR = 60;
-const MAX_SPUR = 80;
-const MIN_PINION = 40;
-const MAX_PINION = 60;
-
-// Default gearing (locked in)
 let currentSpur = 66;
 let currentPinion = 50;
-let cursorSpur = 66;
-let cursorPinion = 50;
-
-// =========================
-// BUILD LOCAL GEARING TABLE
-// =========================
+const WINDOW = 3;
 
 function buildLocalTable() {
   const headRow = $("localHeadRow");
@@ -298,76 +147,54 @@ function buildLocalTable() {
   const { tireMm, car } = readInputs();
   const range = getCarTeethRange(car);
 
-  // ----- Build header row -----
+  const spurStart = currentSpur - WINDOW;
+  const spurEnd   = currentSpur + WINDOW;
+  const pinionStart = currentPinion - WINDOW;
+  const pinionEnd   = currentPinion + WINDOW;
+
+  // Header row
   headRow.innerHTML = "";
   const corner = document.createElement("th");
   corner.textContent = "Spur ↓ / Pinion →";
   headRow.appendChild(corner);
 
-  for (let p = MIN_PINION; p <= MAX_PINION; p++) {
+  for (let p = pinionStart; p <= pinionEnd; p++) {
     const th = document.createElement("th");
     th.textContent = p;
     headRow.appendChild(th);
   }
 
-  // ----- Build body rows -----
+  // Body rows
   body.innerHTML = "";
 
-  for (let s = MIN_SPUR; s <= MAX_SPUR; s++) {
+  for (let s = spurStart; s <= spurEnd; s++) {
     const tr = document.createElement("tr");
 
-    // Spur label
     const spurCell = document.createElement("td");
     spurCell.textContent = s;
     tr.appendChild(spurCell);
 
-    // Pinion columns
-    for (let p = MIN_PINION; p <= MAX_PINION; p++) {
+    for (let p = pinionStart; p <= pinionEnd; p++) {
       const td = document.createElement("td");
 
       const total = totalTeeth(s, p);
       const legal = total >= range.min && total <= range.max;
-
       const rolloutIn = computeRollout(s, p, tireMm);
 
-      if (rolloutIn != null) {
-        // NO UNITS — stacked numbers only
-        td.innerHTML = formatDualUnitsGrid(rolloutIn);
-      } else {
-        td.textContent = "";
-      }
-
-      // Legal / illegal coloring
+      td.innerHTML = rolloutIn != null ? formatDualUnitsGrid(rolloutIn) : "";
       td.classList.add(legal ? "legal-gear" : "illegal-gear");
 
-      // Current gear highlight
       if (s === currentSpur && p === currentPinion) {
         td.classList.add("current-gear");
       }
 
-      // Cursor highlight
-      if (s === cursorSpur && p === cursorPinion) {
-        td.classList.add("cursor-cell");
-      }
-
-      // Store coordinates
-      td.dataset.spur = s;
-      td.dataset.pinion = p;
-
-      // Click → move cursor + set current
       td.addEventListener("click", () => {
-        cursorSpur = s;
-        cursorPinion = p;
         currentSpur = s;
         currentPinion = p;
-
         $("spur").value = s;
         $("pinion").value = p;
-
         buildLocalTable();
-scrollCursorIntoView();
-buildRecommendedTable();
-
+        buildRecommendedTable();
       });
 
       tr.appendChild(td);
@@ -375,105 +202,44 @@ buildRecommendedTable();
 
     body.appendChild(tr);
   }
-
-  highlightHeaders();
 }
-
-// =========================
-// HEADER HIGHLIGHTING
-// =========================
-
-function highlightHeaders() {
-  const headRow = $("localHeadRow");
-  const body = $("localBody");
-  if (!headRow || !body) return;
-
-  // Clear old highlights
-  Array.from(headRow.children).forEach(th =>
-    th.classList.remove("header-highlight")
-  );
-  Array.from(body.rows).forEach(row =>
-    row.cells[0].classList.remove("header-highlight")
-  );
-
-  // Compute indices
-  const spurIndex = cursorSpur - MIN_SPUR + 1;
-  const pinionIndex = cursorPinion - MIN_PINION + 1;
-
-  // Highlight pinion column header
-  if (headRow.children[pinionIndex]) {
-    headRow.children[pinionIndex].classList.add("header-highlight");
-  }
-
-  // Highlight spur row header
-  const row = body.rows[cursorSpur - MIN_SPUR];
-  if (row) row.cells[0].classList.add("header-highlight");
-}
-
-// =========================
-// KEYBOARD NAVIGATION
-// =========================
-//
-// Arrow keys move the cursor.
-// Enter sets current gearing.
-//
 
 function setupKeyboardNavigation() {
   document.addEventListener("keydown", e => {
     let moved = false;
 
-    if (e.key === "ArrowUp" && cursorSpur > MIN_SPUR) {
-      cursorSpur--;
-      moved = true;
-    } else if (e.key === "ArrowDown" && cursorSpur < MAX_SPUR) {
-      cursorSpur++;
-      moved = true;
-    } else if (e.key === "ArrowLeft" && cursorPinion > MIN_PINION) {
-      cursorPinion--;
-      moved = true;
-    } else if (e.key === "ArrowRight" && cursorPinion < MAX_PINION) {
-      cursorPinion++;
-      moved = true;
-    } else if (e.key === "Enter") {
-      currentSpur = cursorSpur;
-      currentPinion = cursorPinion;
-
+    if (e.key === "ArrowUp") { currentSpur++; moved = true; }
+    else if (e.key === "ArrowDown") { currentSpur--; moved = true; }
+    else if (e.key === "ArrowLeft") { currentPinion--; moved = true; }
+    else if (e.key === "ArrowRight") { currentPinion++; moved = true; }
+    else if (e.key === "Enter") {
       $("spur").value = currentSpur;
       $("pinion").value = currentPinion;
-
-      buildLocalTable();
-scrollCursorIntoView();
-buildRecommendedTable();
-
+      buildRecommendedTable();
       return;
     }
-    if (moved) {
-  e.preventDefault();
-  buildLocalTable();
-  scrollCursorIntoView();
-}
 
+    if (moved) {
+      e.preventDefault();
+      $("spur").value = currentSpur;
+      $("pinion").value = currentPinion;
+      buildLocalTable();
+      buildRecommendedTable();
+    }
   });
 }
 
-// =========================
-// CENTER ON CURRENT GEARING
-// =========================
-
 function centerOnCurrentGearing() {
-  cursorSpur = currentSpur;
-  cursorPinion = currentPinion;
   buildLocalTable();
 }
+
 /******************************************************
- *  PART 4 — RECOMMENDED GEARING ENGINE
+ *  PART 6 — RECOMMENDED GEARING ENGINE
  ******************************************************/
 
 function buildRecommendedTable() {
-  const table = $("recommended");
-  if (!table) return;
-
-  const tbody = table.querySelector("tbody");
+  const tbody = $("recommended")?.querySelector("tbody");
+  if (!tbody) return;
   tbody.innerHTML = "";
 
   const { tireMm, car, desiredIn } = readInputs();
@@ -481,36 +247,20 @@ function buildRecommendedTable() {
 
   const rows = [];
 
-  // --------------------------------------------------
-  // Generate all legal gear combinations
-  // --------------------------------------------------
-  for (let s = MIN_SPUR; s <= MAX_SPUR; s++) {
-    for (let p = MIN_PINION; p <= MAX_PINION; p++) {
+  for (let s = 60; s <= 80; s++) {
+    for (let p = 40; p <= 60; p++) {
       const total = totalTeeth(s, p);
-      const legal = total >= range.min && total <= range.max;
-      if (!legal) continue;
+      if (total < range.min || total > range.max) continue;
 
       const rolloutIn = computeRollout(s, p, tireMm);
       if (rolloutIn == null) continue;
 
-      let delta = null;
-      if (desiredIn != null && !isNaN(desiredIn)) {
-        delta = rolloutIn - desiredIn;
-      }
+      const delta = desiredIn != null ? rolloutIn - desiredIn : null;
 
-      rows.push({
-        spur: s,
-        pinion: p,
-        total,
-        rolloutIn,
-        delta
-      });
+      rows.push({ spur: s, pinion: p, total, rolloutIn, delta });
     }
   }
 
-  // --------------------------------------------------
-  // Sort by closeness to desired rollout
-  // --------------------------------------------------
   rows.sort((a, b) => {
     if (a.delta == null && b.delta == null) return 0;
     if (a.delta == null) return 1;
@@ -518,108 +268,59 @@ function buildRecommendedTable() {
     return Math.abs(a.delta) - Math.abs(b.delta);
   });
 
-  // --------------------------------------------------
-  // Render rows
-  // --------------------------------------------------
-  rows.forEach((r, index) => {
+  rows.forEach((r, i) => {
     const tr = document.createElement("tr");
 
-    // Spur
-    const tdSpur = document.createElement("td");
-    tdSpur.textContent = r.spur;
+    const tdS = document.createElement("td"); tdS.textContent = r.spur;
+    const tdP = document.createElement("td"); tdP.textContent = r.pinion;
+    const tdT = document.createElement("td"); tdT.textContent = r.total;
 
-    // Pinion
-    const tdPinion = document.createElement("td");
-    tdPinion.textContent = r.pinion;
+    const tdR = document.createElement("td");
+    tdR.innerHTML = formatDualUnitsGrid(r.rolloutIn);
 
-    // Total teeth
-    const tdTotal = document.createElement("td");
-    tdTotal.textContent = r.total;
-
-    // Rollout (stacked numbers, NO units)
-    const tdRollout = document.createElement("td");
-    tdRollout.innerHTML = formatDualUnitsGrid(r.rolloutIn);
-
-    // Delta (inches only — numeric)
-    const tdDelta = document.createElement("td");
-    if (r.delta == null) {
-      tdDelta.textContent = "";
-    } else {
+    const tdD = document.createElement("td");
+    if (r.delta != null) {
       const sign = r.delta >= 0 ? "+" : "";
-      tdDelta.textContent = `${sign}${r.delta.toFixed(3)}`;
+      tdD.textContent = `${sign}${r.delta.toFixed(3)}`;
     }
 
-    tr.appendChild(tdSpur);
-    tr.appendChild(tdPinion);
-    tr.appendChild(tdTotal);
-    tr.appendChild(tdRollout);
-    tr.appendChild(tdDelta);
+    tr.appendChild(tdS);
+    tr.appendChild(tdP);
+    tr.appendChild(tdT);
+    tr.appendChild(tdR);
+    tr.appendChild(tdD);
 
-    // --------------------------------------------------
-    // Highlight the best recommendation (closest to desired)
-    // --------------------------------------------------
-    if (index === 0 && r.delta != null) {
+    if (i === 0 && r.delta != null) {
       tr.classList.add("best-recommendation");
     }
 
-    // --------------------------------------------------
-    // Click → apply gearing to calculator
-    // --------------------------------------------------
     tr.addEventListener("click", () => {
       currentSpur = r.spur;
       currentPinion = r.pinion;
-      cursorSpur = r.spur;
-      cursorPinion = r.pinion;
-
       $("spur").value = r.spur;
       $("pinion").value = r.pinion;
-
       buildLocalTable();
-scrollCursorIntoView();
-buildRecommendedTable();
-
+      buildRecommendedTable();
     });
 
     tbody.appendChild(tr);
   });
 }
-/******************************************************
- *  PART 5 — GLOBAL TIRE SET SYSTEM + INIT
- ******************************************************/
 
-// =========================
-// GLOBAL TIRE DATA MODEL
-// =========================
+/******************************************************
+ *  PART 7 — TIRE SYSTEM + INIT
+ ******************************************************/
 
 const TIRE_LS_KEY = "tireSetSystemData";
 
 const defaultTireData = {
-  thresholds: {
-    new_min: 40.5,
-    cut_min: 40.0,
-    old_min: 39.7
-  },
-  racers: {
-    William: {},
-    John: {}
-  },
+  thresholds: { new_min: 40.5, cut_min: 40.0, old_min: 39.7 },
+  racers: { William: {}, John: {} },
   tire_sets: {
     "12": {
       identifier: "12",
-      LH: {
-        measured: 40.85,
-        status: "CUT",
-        wear: 78,
-        uses: 2,
-        last_used: "2026-03-28"
-      },
-      RH: {
-        measured: 40.80,
-        status: "CUT",
-        wear: 85,
-        uses: 1,
-        last_used: "2026-03-28"
-      },
+      LH: { measured: 40.85, status: "CUT", wear: 78, uses: 2 },
+      RH: { measured: 40.80, status: "CUT", wear: 85, uses: 1 },
       batch: "B12",
       compound: "CRC",
       brand: "CRC",
@@ -632,65 +333,43 @@ const defaultTireData = {
 
 let tireData = null;
 
-// =========================
-// STORAGE HELPERS
-// =========================
-
 function loadTireDataFromLocalStorage() {
-  const raw = localStorage.getItem(TIRE_LS_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
+  try { return JSON.parse(localStorage.getItem(TIRE_LS_KEY)); }
+  catch { return null; }
 }
 
-function saveTireDataToLocalStorage(data) {
-  localStorage.setItem(TIRE_LS_KEY, JSON.stringify(data));
+function saveTireDataToLocalStorage(d) {
+  localStorage.setItem(TIRE_LS_KEY, JSON.stringify(d));
 }
 
 async function loadTireDataJson() {
   try {
     const res = await fetch("tireData.json", { cache: "no-cache" });
-    if (!res.ok) throw new Error("no tireData.json");
+    if (!res.ok) throw 0;
     return await res.json();
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 async function ensureTireDataLoaded() {
   if (tireData) return tireData;
 
   const fromLS = loadTireDataFromLocalStorage();
-  if (fromLS) {
-    tireData = fromLS;
-  } else {
+  if (fromLS) tireData = fromLS;
+  else {
     const fromJson = await loadTireDataJson();
     tireData = fromJson || structuredClone(defaultTireData);
     saveTireDataToLocalStorage(tireData);
   }
 
-  if (!tireData.racers) tireData.racers = {};
-  if (!tireData.tire_sets) tireData.tire_sets = {};
-  if (!tireData.history) tireData.history = [];
-
   return tireData;
 }
-
-// =========================
-// RACER + TIRE SET SELECTS
-// =========================
 
 function buildCalcRacerSelect() {
   const sel = $("calcRacerSelect");
   if (!sel || !tireData) return;
 
   sel.innerHTML = "";
-  const names = Object.keys(tireData.racers || {}).sort();
-
-  names.forEach(name => {
+  Object.keys(tireData.racers).sort().forEach(name => {
     const opt = document.createElement("option");
     opt.value = name;
     opt.textContent = name;
@@ -703,69 +382,81 @@ function buildCalcTireSetSelect() {
   if (!sel || !tireData) return;
 
   sel.innerHTML = "";
-  const sets = tireData.tire_sets || {};
-  const ids = Object.keys(sets).sort();
-
-  ids.forEach(id => {
-    const set = sets[id];
+  Object.keys(tireData.tire_sets).sort().forEach(id => {
+    const set = tireData.tire_sets[id];
     const opt = document.createElement("option");
+    const lh = set.LH?.measured ?? "?";
+    const rh = set.RH?.measured ?? "?";
+    const used = (set.usedByRacers || []).join(", ");
     opt.value = id;
-
-    const lh = set.LH || {};
-    const rh = set.RH || {};
-    const usedBy = (set.usedByRacers || []).join(", ");
-
-    opt.textContent =
-      `${set.identifier || id} ` +
-      `(LH: ${lh.measured ?? "?"} / RH: ${rh.measured ?? "?"})` +
-      (usedBy ? ` — Used by: ${usedBy}` : "");
-
+    opt.textContent = `${id} (LH: ${lh} / RH: ${rh})${used ? " — Used by: " + used : ""}`;
     sel.appendChild(opt);
   });
 }
-
-// =========================
-// APPLY SELECTED TIRE TO CALCULATOR
-// =========================
 
 function applySelectedTireToCalculator() {
   if (!tireData) return;
 
   const setId = $("calcTireSetSelect")?.value;
   const side = $("calcTireSideSelect")?.value || "LH";
-  if (!setId || !tireData.tire_sets[setId]) return;
+  if (!setId) return;
 
   const set = tireData.tire_sets[setId];
-  const sideData = set[side] || {};
-  if (!sideData.measured) return;
+  const sideData = set[side];
+  if (!sideData?.measured) return;
 
-  const tireInput = $("tire");
-  if (!tireInput) return;
-
-  tireInput.value = sideData.measured;
+  $("tire").value = sideData.measured;
   updateTireDualDisplay();
   markTireManualOverride();
   buildLocalTable();
-scrollCursorIntoView();
-buildRecommendedTable();
-
+  buildRecommendedTable();
 }
 
-// =========================
-// COLLAPSIBLE CARDS
-// =========================
-
 function setupCollapsibleCards() {
-  document.querySelectorAll(".collapsible .card-header").forEach(header => {
-    header.addEventListener("click", () => {
-      header.parentElement.classList.toggle("collapsed");
+  document.querySelectorAll(".collapsible .card-header").forEach(h => {
+    h.addEventListener("click", () => {
+      h.parentElement.classList.toggle("collapsed");
     });
   });
 }
 
-// =========================
-// INIT
-// =========================
+function setupCalculatorInputs() {
+  const tire = $("tire");
+  const desired = $("desiredRollout");
+  const spur = $("spur");
+  const pinion = $("pinion");
+  const car = $("car");
+
+  if (tire) tire.addEventListener("input", () => {
+    updateTireDualDisplay();
+    markTireManualOverride();
+    buildLocalTable();
+    buildRecommendedTable();
+  });
+
+  if (desired) desired.addEventListener("input", () => {
+    updateDesiredDualDisplay();
+    buildRecommendedTable();
+  });
+
+  if (spur) spur.addEventListener("input", () => {
+    currentSpur = parseInt(spur.value, 10) || currentSpur;
+    buildLocalTable();
+    buildRecommendedTable();
+  });
+
+  if (pinion) pinion.addEventListener("input", () => {
+    currentPinion = parseInt(pinion.value, 10) || currentPinion;
+    buildLocalTable();
+    buildRecommendedTable();
+  });
+
+  if (car) car.addEventListener("change", () => {
+    updateTeethRangeDisplay();
+    buildLocalTable();
+    buildRecommendedTable();
+  });
+}
 
 async function initApp() {
   setupCollapsibleCards();
@@ -776,45 +467,15 @@ async function initApp() {
   buildCalcRacerSelect();
   buildCalcTireSetSelect();
 
-  const tireSetSel = $("calcTireSetSelect");
-  const tireSideSel = $("calcTireSideSelect");
-  const centerBtn = $("centerBtn");
-
-  if (tireSetSel) {
-    tireSetSel.addEventListener("change", applySelectedTireToCalculator);
-  }
-  if (tireSideSel) {
-    tireSideSel.addEventListener("change", applySelectedTireToCalculator);
-  }
-  if (centerBtn) {
-    centerBtn.addEventListener("click", centerOnCurrentGearing);
-  }
+  $("calcTireSetSelect")?.addEventListener("change", applySelectedTireToCalculator);
+  $("calcTireSideSelect")?.addEventListener("change", applySelectedTireToCalculator);
+  $("centerBtn")?.addEventListener("click", centerOnCurrentGearing);
 
   updateTireDualDisplay();
   updateDesiredDualDisplay();
   updateTeethRangeDisplay();
   buildLocalTable();
-scrollCursorIntoView();
-buildRecommendedTable();
-
+  buildRecommendedTable();
 }
 
 document.addEventListener("DOMContentLoaded", initApp);
-function scrollCursorIntoView() {
-  const container = document.querySelector(".scroll-container");
-  if (!container) return;
-
-  const cell = container.querySelector(
-    `td[data-spur="${cursorSpur}"][data-pinion="${cursorPinion}"]`
-  );
-  if (!cell) return;
-
-  const cellRect = cell.getBoundingClientRect();
-  const contRect = container.getBoundingClientRect();
-
-  const offsetX = cellRect.left - contRect.left - contRect.width / 2 + cellRect.width / 2;
-  const offsetY = cellRect.top - contRect.top - contRect.height / 2 + cellRect.height / 2;
-
-  container.scrollLeft += offsetX;
-  container.scrollTop += offsetY;
-}
