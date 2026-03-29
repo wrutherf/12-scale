@@ -1,0 +1,19 @@
+{
+  "thresholds": {
+    "new_min": 40.5,
+    "cut_min": 40.0,
+    "old_min": 39.7
+  },
+  "overrides": {
+    "40.85": "CUT",
+    "40.30": "OLD",
+    "39.65": "DO_NOT_USE"
+  },
+  "metadata": {
+    "40.85": {
+      "notes": "Best tire for carpet",
+      "batch": "B12",
+      "brand": "CRC"
+    }
+  }
+}
