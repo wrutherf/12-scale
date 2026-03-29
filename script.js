@@ -73,7 +73,7 @@ function totalTeeth(spur, pinion) {
 }
 
 function getCarTeethRange(car) {
-  if (car === "a12x") return { min: 100, max: 150 };
+  if (car === "a12x") return { min: 112, max: 125 };
   return { min: 90, max: 140 };
 }
 
