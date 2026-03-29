@@ -2,30 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Tire Size Chart</title>
+  <title>Tire Sets & History</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <header>
-    <h1>Tire Size Chart</h1>
+    <h1>Tire Sets & History</h1>
     <nav>
       <a href="index.html" class="nav-link">Back to Calculator</a>
     </nav>
   </header>
 
+  <!-- TIRE SETS CARD -->
   <section class="card collapsible expanded">
     <div class="card-header">
-      <h2>Tire Conversion & Status</h2>
+      <h2>Tire Sets</h2>
       <span class="collapse-arrow">▼</span>
     </div>
 
     <div class="card-content">
-
       <div class="tire-toolbar">
-        <label>Filter
-          <input type="text" id="tireFilter" placeholder="e.g. 40.3">
+        <label>Racer
+          <select id="racerSelect"></select>
         </label>
+
+        <button id="addRacerBtn">Add Racer</button>
+        <button id="addTireSetBtn">Add Tire Set</button>
 
         <button id="exportTireJson">Export JSON</button>
 
@@ -34,16 +37,19 @@
           <input type="file" id="importTireJson" accept="application/json" style="display:none;">
         </label>
 
-        <button id="resetTireOverrides">Reset Overrides</button>
+        <button id="resetTireData">Reset Tire Data</button>
       </div>
 
       <div class="scroll-container">
-        <table id="tireTable">
+        <table id="tireSetTable">
           <thead>
             <tr>
-              <th>Diameter (mm)</th>
-              <th>Diameter (in)</th>
-              <th>Status</th>
+              <th>Set ID</th>
+              <th>LH (mm / status / wear)</th>
+              <th>RH (mm / status / wear)</th>
+              <th>Total Uses</th>
+              <th>Last Used</th>
+              <th>Log Run</th>
             </tr>
           </thead>
           <tbody>
@@ -51,9 +57,142 @@
           </tbody>
         </table>
       </div>
-
     </div>
   </section>
+
+  <!-- TIRE HISTORY CARD -->
+  <section class="card collapsible expanded">
+    <div class="card-header">
+      <h2>Tire History</h2>
+      <span class="collapse-arrow">▼</span>
+    </div>
+
+    <div class="card-content">
+      <div class="tire-history-toolbar">
+        <label>Racer
+          <select id="historyRacerFilter">
+            <option value="ALL">All</option>
+          </select>
+        </label>
+        <label>Event
+          <input type="text" id="historyEventFilter" placeholder="Filter by event">
+        </label>
+        <label>Track
+          <input type="text" id="historyTrackFilter" placeholder="Filter by track">
+        </label>
+        <label>Side
+          <select id="historySideFilter">
+            <option value="ALL">All</option>
+            <option value="LH">LH</option>
+            <option value="RH">RH</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="scroll-container">
+        <table id="tireHistoryTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Racer</th>
+              <th>Set ID</th>
+              <th>Side</th>
+              <th>Event</th>
+              <th>Track</th>
+              <th>Grip</th>
+              <th>Rotation</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- history rows built by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADD TIRE SET MODAL -->
+  <div id="addTireSetModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Add Tire Set</h3>
+      <label>Set Identifier (number/label)
+        <input type="text" id="newSetId">
+      </label>
+      <label>LH Measured Diameter (mm)
+        <input type="number" id="newSetLhMm" step="0.01">
+      </label>
+      <label>RH Measured Diameter (mm)
+        <input type="number" id="newSetRhMm" step="0.01">
+      </label>
+      <label>Notes
+        <textarea id="newSetNotes"></textarea>
+      </label>
+      <div class="modal-actions">
+        <button id="saveNewSetBtn">Save</button>
+        <button class="secondary" id="cancelNewSetBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG RUN MODAL -->
+  <div id="logRunModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Log Run</h3>
+
+      <label>Racer
+        <select id="logRacer"></select>
+      </label>
+
+      <label>Tire Set
+        <select id="logSetId"></select>
+      </label>
+
+      <label>Side Used
+        <select id="logSide">
+          <option value="LH">LH</option>
+          <option value="RH">RH</option>
+        </select>
+      </label>
+
+      <label>Measured Diameter (optional, mm)
+        <input type="number" id="logMeasured" step="0.01">
+      </label>
+
+      <label>Rotated Prior To
+        <select id="logRotation">
+          <option value="NONE">None</option>
+          <option value="LH_TO_RH">LH → RH</option>
+          <option value="RH_TO_LH">RH → LH</option>
+        </select>
+      </label>
+
+      <label>Event
+        <input type="text" id="logEvent">
+      </label>
+
+      <label>Track
+        <input type="text" id="logTrack">
+      </label>
+
+      <label>Track Grip
+        <select id="logGrip">
+          <option value="LOW">Low</option>
+          <option value="MEDIUM">Medium</option>
+          <option value="HIGH">High</option>
+        </select>
+      </label>
+
+      <label>Notes
+        <textarea id="logNotes"></textarea>
+      </label>
+
+      <div class="modal-actions">
+        <button id="saveLogRunBtn">Save Run</button>
+        <button class="secondary" id="cancelLogRunBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
 
   <script src="script.js"></script>
 </body>
