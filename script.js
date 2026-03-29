@@ -83,6 +83,9 @@ function updateTireConvertedDisplay() {
   const inches = mmToInches(mm);
   out.textContent = `${inches.toFixed(3)} in`;
 }
+// =========================
+// LOCAL GEARING MAP
+// =========================
 
 function buildLocalTable() {
   const headRow = $("localHeadRow");
@@ -203,6 +206,10 @@ function setupKeyboardNavigation() {
   });
 }
 
+// =========================
+// RECOMMENDED GEARING PANEL
+// =========================
+
 function buildRecommendedTable() {
   const table = $("recommended");
   if (!table) return;
@@ -275,6 +282,10 @@ function buildRecommendedTable() {
   });
 }
 
+// =========================
+// CALCULATOR INPUT BINDINGS
+// =========================
+
 function setupCalculatorInputs() {
   const spur = $("spur");
   const pinion = $("pinion");
@@ -334,7 +345,7 @@ function setupCalculatorInputs() {
 }
 
 // =========================
-// TIRE SET SYSTEM (GLOBAL)
+// GLOBAL TIRE SET SYSTEM
 // =========================
 
 const TIRE_LS_KEY = "tireSetSystemData";
@@ -449,7 +460,10 @@ function ensureRacerExists(name) {
   if (!tireData.racers[name]) tireData.racers[name] = {};
 }
 
-// Build racer selects (global)
+// =========================
+// RACER SELECTS (GLOBAL)
+// =========================
+
 function buildRacerSelects() {
   const historyRacerFilter = $("historyRacerFilter");
   const logRacer = $("logRacer");
@@ -507,7 +521,10 @@ function buildRacerSelects() {
   }
 }
 
-// Tire sets table (global, with filters)
+// =========================
+// TIRE SET TABLE (GLOBAL)
+// =========================
+
 function buildTireSetTable() {
   const tbody = document.querySelector("#tireSetTable tbody");
   if (!tbody) return;
@@ -520,7 +537,6 @@ function buildTireSetTable() {
   const sets = tireData.tire_sets || {};
   const setIds = Object.keys(sets).sort();
 
-  // Precompute which sets each racer has used
   const racerUsage = {};
   (tireData.history || []).forEach(h => {
     if (!h.racer || !h.set_id) return;
@@ -533,14 +549,12 @@ function buildTireSetTable() {
     const lh = set.LH || {};
     const rh = set.RH || {};
 
-    // Status filter: match if either side has that status
     if (statusFilter !== "ALL") {
       const lhStatus = lh.status || "";
       const rhStatus = rh.status || "";
       if (lhStatus !== statusFilter && rhStatus !== statusFilter) return;
     }
 
-    // Racer usage filter
     if (racerFilter !== "ALL") {
       const usedBy = racerUsage[racerFilter];
       if (!usedBy || !usedBy.has(setId)) return;
@@ -590,7 +604,10 @@ function buildTireSetTable() {
   buildLogSetSelect();
 }
 
-// Log modal set select (global)
+// =========================
+// LOG RUN MODAL
+// =========================
+
 function buildLogSetSelect() {
   const logSetId = $("logSetId");
   if (!logSetId) return;
@@ -610,157 +627,6 @@ function buildLogSetSelect() {
   });
 }
 
-// History table
-function buildHistoryTable() {
-  const tbody = document.querySelector("#tireHistoryTable tbody");
-  if (!tbody) return;
-
-  tbody.innerHTML = "";
-
-  const racerFilter = $("historyRacerFilter")?.value || "ALL";
-  const eventFilter = $("historyEventFilter")?.value.trim().toLowerCase() || "";
-  const trackFilter = $("historyTrackFilter")?.value.trim().toLowerCase() || "";
-  const sideFilter = $("historySideFilter")?.value || "ALL";
-
-  const entries = (tireData.history || []).slice().sort((a, b) => {
-    return (b.date || "").localeCompare(a.date || "");
-  });
-
-  entries.forEach(h => {
-    if (racerFilter !== "ALL" && h.racer !== racerFilter) return;
-    if (sideFilter !== "ALL" && h.side !== sideFilter) return;
-    if (eventFilter && !(h.event || "").toLowerCase().includes(eventFilter)) return;
-    if (trackFilter && !(h.track || "").toLowerCase().includes(trackFilter)) return;
-
-    const tr = document.createElement("tr");
-
-    const tdDate = document.createElement("td");
-    tdDate.textContent = h.date || "";
-
-    const tdRacer = document.createElement("td");
-    tdRacer.textContent = h.racer || "";
-
-    const tdSet = document.createElement("td");
-    tdSet.textContent = h.set_id || "";
-
-    const tdSide = document.createElement("td");
-    tdSide.textContent = h.side || "";
-
-    const tdEvent = document.createElement("td");
-    tdEvent.textContent = h.event || "";
-
-    const tdTrack = document.createElement("td");
-    tdTrack.textContent = h.track || "";
-
-    const tdGrip = document.createElement("td");
-    tdGrip.textContent = h.grip || "";
-
-    const tdRot = document.createElement("td");
-    tdRot.textContent = h.rotation || "";
-
-    const tdNotes = document.createElement("td");
-    tdNotes.textContent = h.notes || "";
-
-    tr.appendChild(tdDate);
-    tr.appendChild(tdRacer);
-    tr.appendChild(tdSet);
-    tr.appendChild(tdSide);
-    tr.appendChild(tdEvent);
-    tr.appendChild(tdTrack);
-    tr.appendChild(tdGrip);
-    tr.appendChild(tdRot);
-    tr.appendChild(tdNotes);
-
-    tbody.appendChild(tr);
-  });
-}
-
-// Add racer
-function setupAddRacer() {
-  const btn = $("addRacerBtn");
-  if (!btn) return;
-  btn.addEventListener("click", () => {
-    const name = prompt("Enter racer name:");
-    if (!name) return;
-    ensureRacerExists(name);
-    saveTireDataToLocalStorage(tireData);
-    buildRacerSelects();
-    buildTireSetTable();
-    buildHistoryTable();
-    buildCalcTireSetSelect();
-  });
-}
-
-// Add tire set modal
-function openAddTireSetModal() {
-  $("addTireSetModal")?.classList.remove("hidden");
-}
-
-function closeAddTireSetModal() {
-  $("addTireSetModal")?.classList.add("hidden");
-}
-
-function setupAddTireSet() {
-  const btn = $("addTireSetBtn");
-  if (!btn) return;
-
-  btn.addEventListener("click", () => {
-    $("newSetId").value = "";
-    $("newSetLhMm").value = "";
-    $("newSetRhMm").value = "";
-    $("newSetNotes").value = "";
-    openAddTireSetModal();
-  });
-
-  $("cancelNewSetBtn")?.addEventListener("click", () => {
-    closeAddTireSetModal();
-  });
-
-  $("saveNewSetBtn")?.addEventListener("click", () => {
-    const id = $("newSetId").value.trim();
-    const lhMm = parseFloat($("newSetLhMm").value);
-    const rhMm = parseFloat($("newSetRhMm").value);
-    const notes = $("newSetNotes").value.trim();
-
-    if (!id) {
-      alert("Set identifier is required.");
-      return;
-    }
-
-    if (!tireData.tire_sets) tireData.tire_sets = {};
-    if (tireData.tire_sets[id]) {
-      alert("A tire set with this identifier already exists.");
-      return;
-    }
-
-    tireData.tire_sets[id] = {
-      identifier: id,
-      LH: {
-        measured: isNaN(lhMm) ? null : lhMm,
-        status: "NEW",
-        wear: 100,
-        uses: 0,
-        last_used: null
-      },
-      RH: {
-        measured: isNaN(rhMm) ? null : rhMm,
-        status: "NEW",
-        wear: 100,
-        uses: 0,
-        last_used: null
-      },
-      rotation_history: [],
-      notes
-    };
-
-    saveTireDataToLocalStorage(tireData);
-    closeAddTireSetModal();
-    buildTireSetTable();
-    buildCalcTireSetSelect();
-  });
-}
-
-// Log run modal
 function openLogRunModal(setId) {
   const logRacer = $("logRacer");
   const logSetId = $("logSetId");
@@ -772,297 +638,5 @@ function openLogRunModal(setId) {
 
   if (logRacer) {
     const racerNames = Object.keys(tireData.racers || {});
-    if (racerNames.length) logRacer.value = racerNames[0];
-  }
 
-  $("logSide").value = "LH";
-  $("logMeasured").value = "";
-  $("logRotation").value = "NONE";
-  $("logEvent").value = "";
-  $("logTrack").value = "";
-  $("logGrip").value = "MEDIUM";
-  $("logNotes").value = "";
 
-  $("logRunModal")?.classList.remove("hidden");
-}
-
-function closeLogRunModal() {
-  $("logRunModal")?.classList.add("hidden");
-}
-
-function setupLogRunModal() {
-  $("cancelLogRunBtn")?.addEventListener("click", () => {
-    closeLogRunModal();
-  });
-
-  $("saveLogRunBtn")?.addEventListener("click", () => {
-    const racerName = $("logRacer").value;
-    const setId = $("logSetId").value;
-    const side = $("logSide").value;
-    const measured = parseFloat($("logMeasured").value);
-    const rotation = $("logRotation").value;
-    const eventName = $("logEvent").value.trim();
-    const track = $("logTrack").value.trim();
-    const grip = $("logGrip").value;
-    const notes = $("logNotes").value.trim();
-
-    if (!racerName) {
-      alert("Select a racer.");
-      return;
-    }
-    ensureRacerExists(racerName);
-
-    if (!tireData.tire_sets || !tireData.tire_sets[setId]) {
-      alert("Invalid tire set.");
-      return;
-    }
-
-    const set = tireData.tire_sets[setId];
-    const sideObj = set[side];
-    if (!sideObj) {
-      alert("Invalid side.");
-      return;
-    }
-
-    if (!isNaN(measured)) sideObj.measured = measured;
-
-    const wearLoss = getWearLoss(sideObj.status || "NEW", grip);
-    sideObj.wear = Math.max(0, (sideObj.wear ?? 100) - wearLoss);
-    sideObj.uses = (sideObj.uses || 0) + 1;
-    const today = new Date().toISOString().slice(0, 10);
-    sideObj.last_used = today;
-
-    let rotationLabel = "None";
-    if (rotation === "LH_TO_RH" || rotation === "RH_TO_LH") {
-      const from = rotation === "LH_TO_RH" ? "LH" : "RH";
-      const to = rotation === "LH_TO_RH" ? "RH" : "LH";
-      const tmp = structuredClone(set[from]);
-      set[from] = structuredClone(set[to]);
-      set[to] = tmp;
-      set.rotation_history.push({ date: today, from, to });
-      rotationLabel = `${from}→${to}`;
-    }
-
-    if (!tireData.history) tireData.history = [];
-    tireData.history.push({
-      racer: racerName,
-      set_id: setId,
-      side,
-      date: today,
-      event: eventName,
-      track,
-      grip,
-      rotation: rotationLabel,
-      notes
-    });
-
-    saveTireDataToLocalStorage(tireData);
-    closeLogRunModal();
-    buildTireSetTable();
-    buildHistoryTable();
-    buildCalcTireSetSelect();
-  });
-}
-
-// Export / import / reset
-function setupExportImportReset() {
-  const exportBtn = $("exportTireJson");
-  const importInput = $("importTireJson");
-  const resetBtn = $("resetTireData");
-
-  if (exportBtn) {
-    exportBtn.addEventListener("click", () => {
-      const blob = new Blob([JSON.stringify(tireData, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "tireData.json";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    });
-  }
-
-  if (importInput) {
-    importInput.addEventListener("change", () => {
-      const file = importInput.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = e => {
-        try {
-          const incoming = JSON.parse(e.target.result);
-          const merged = mergeTireData(tireData, incoming);
-          tireData = merged;
-          saveTireDataToLocalStorage(tireData);
-          initTirePage();
-          initCalculatorFromTireData();
-        } catch {
-          alert("Invalid JSON file.");
-        }
-      };
-      reader.readAsText(file);
-    });
-  }
-
-  if (resetBtn) {
-    resetBtn.addEventListener("click", () => {
-      if (!confirm("Reset all tire data to defaults?")) return;
-      localStorage.removeItem(TIRE_LS_KEY);
-      tireData = structuredClone(defaultTireData);
-      saveTireDataToLocalStorage(tireData);
-      initTirePage();
-      initCalculatorFromTireData();
-    });
-  }
-}
-
-// History filters
-function setupHistoryFilters() {
-  ["historyRacerFilter", "historyEventFilter", "historyTrackFilter", "historySideFilter"].forEach(id => {
-    const el = $(id);
-    if (el) {
-      el.addEventListener("input", () => buildHistoryTable());
-      el.addEventListener("change", () => buildHistoryTable());
-    }
-  });
-
-  const tireSetRacerFilter = $("tireSetRacerFilter");
-  const tireSetStatusFilter = $("tireSetStatusFilter");
-  if (tireSetRacerFilter) {
-    tireSetRacerFilter.addEventListener("change", () => buildTireSetTable());
-  }
-  if (tireSetStatusFilter) {
-    tireSetStatusFilter.addEventListener("change", () => buildTireSetTable());
-  }
-}
-
-// =========================
-// CALCULATOR ↔ TIRE SET INTEGRATION
-// =========================
-
-function buildCalcTireSetSelect() {
-  const calcTireSetSelect = $("calcTireSetSelect");
-  if (!calcTireSetSelect) return;
-  calcTireSetSelect.innerHTML = "";
-
-  const sets = tireData.tire_sets || {};
-  const setIds = Object.keys(sets).sort();
-
-  setIds.forEach(id => {
-    const set = sets[id];
-    const opt = document.createElement("option");
-    opt.value = id;
-    const lh = set.LH || {};
-    const rh = set.RH || {};
-    opt.textContent = `${set.identifier || id} (LH: ${lh.measured ?? "?"}, RH: ${rh.measured ?? "?"})`;
-    calcTireSetSelect.appendChild(opt);
-  });
-
-  applySelectedTireToCalculator();
-}
-
-function applySelectedTireToCalculator() {
-  const calcTireSetSelect = $("calcTireSetSelect");
-  const calcTireSideSelect = $("calcTireSideSelect");
-  const tireInput = $("tire");
-  if (!calcTireSetSelect || !calcTireSideSelect || !tireInput) return;
-
-  const setId = calcTireSetSelect.value;
-  const side = calcTireSideSelect.value;
-
-  if (!tireData.tire_sets || !tireData.tire_sets[setId]) return;
-  const set = tireData.tire_sets[setId];
-  const sideObj = set[side];
-  if (!sideObj || sideObj.measured == null) return;
-
-  tireInput.value = sideObj.measured.toFixed(2);
-  $("tireManualIndicator").textContent = "";
-  updateTireConvertedDisplay();
-  buildLocalTable();
-  buildRecommendedTable();
-}
-
-function markTireManualOverride() {
-  const calcTireSetSelect = $("calcTireSetSelect");
-  const calcTireSideSelect = $("calcTireSideSelect");
-  const tireInput = $("tire");
-  const indicator = $("tireManualIndicator");
-  if (!calcTireSetSelect || !calcTireSideSelect || !tireInput || !indicator) return;
-
-  const setId = calcTireSetSelect.value;
-  const side = calcTireSideSelect.value;
-
-  if (!tireData.tire_sets || !tireData.tire_sets[setId]) {
-    indicator.textContent = "";
-    return;
-  }
-  const set = tireData.tire_sets[setId];
-  const sideObj = set[side];
-  if (!sideObj || sideObj.measured == null) {
-    indicator.textContent = "";
-    return;
-  }
-
-  const currentVal = parseFloat(tireInput.value);
-  if (isNaN(currentVal)) {
-    indicator.textContent = "";
-    return;
-  }
-
-  indicator.textContent =
-    Math.abs(currentVal - sideObj.measured) > 0.001 ? "Manual override" : "";
-}
-
-function setupCalculatorTireIntegration() {
-  const calcTireSetSelect = $("calcTireSetSelect");
-  const calcTireSideSelect = $("calcTireSideSelect");
-
-  if (!calcTireSetSelect || !calcTireSideSelect) return;
-
-  calcTireSetSelect.addEventListener("change", () => {
-    applySelectedTireToCalculator();
-  });
-
-  calcTireSideSelect.addEventListener("change", () => {
-    applySelectedTireToCalculator();
-  });
-}
-
-// =========================
-// INIT
-// =========================
-
-async function initTirePage() {
-  if (!$("tireSetTable")) return;
-  await ensureTireDataLoaded();
-  buildRacerSelects();
-  buildTireSetTable();
-  buildHistoryTable();
-  setupAddRacer();
-  setupAddTireSet();
-  setupLogRunModal();
-  setupExportImportReset();
-  setupHistoryFilters();
-}
-
-async function initCalculatorFromTireData() {
-  if (!$("localTable")) return;
-  await ensureTireDataLoaded();
-  buildRacerSelects();
-  setupCalculatorInputs();
-  setupCalculatorTireIntegration();
-  updateTeethRangeDisplay();
-  updateTireConvertedDisplay();
-  buildCalcTireSetSelect();
-  buildLocalTable();
-  buildRecommendedTable();
-  setupKeyboardNavigation();
-}
-
-document.addEventListener("DOMContentLoaded", async () => {
-  setupCollapsibleCards();
-  await ensureTireDataLoaded();
-  await initCalculatorFromTireData();
-  await initTirePage();
-});
