@@ -1,364 +1,7 @@
 // =========================
-// ROLLOUT CALCULATOR LOGIC
+// SHARED: COLLAPSIBLE CARDS
 // =========================
 
-// --- Constants / defaults ---
-const DEFAULT_SPUR = 66;
-const DEFAULT_PINION = 50;
-const MIN_SPUR = 60;
-const MAX_SPUR = 80;
-const MIN_PINION = 40;
-const MAX_PINION = 60;
-
-let currentSpur = DEFAULT_SPUR;
-let currentPinion = DEFAULT_PINION;
-let cursorSpur = DEFAULT_SPUR;
-let cursorPinion = DEFAULT_PINION;
-
-// --- Helpers ---
-function mmToInches(mm) {
-  return mm / 25.4;
-}
-
-function computeRollout(spur, pinion, tireMm) {
-  if (!spur || !pinion || !tireMm) return null;
-  const ratio = spur / pinion;
-  const circumferenceIn = mmToInches(tireMm) * Math.PI;
-  return circumferenceIn / ratio;
-}
-
-function formatRollout(value) {
-  if (value == null || isNaN(value)) return "";
-  return value.toFixed(3);
-}
-
-function getCarTeethRange(car) {
-  // simple example ranges; adjust as needed
-  if (car === "a12x") {
-    return { min: 100, max: 150 };
-  }
-  return { min: 90, max: 140 };
-}
-
-function totalTeeth(spur, pinion) {
-  return spur + pinion;
-}
-
-// --- DOM helpers ---
-function $(id) {
-  return document.getElementById(id);
-}
-
-// --- Inputs / state sync ---
-function readInputs() {
-  const spur = parseInt($("spur").value, 10) || DEFAULT_SPUR;
-  const pinion = parseInt($("pinion").value, 10) || DEFAULT_PINION;
-  const tire = parseFloat($("tire").value) || 40.0;
-  const car = $("car").value || "a12";
-  const desired = parseFloat($("desiredRollout").value) || null;
-  return { spur, pinion, tire, car, desired };
-}
-
-function updateTeethRangeDisplay() {
-  const { car } = readInputs();
-  const range = getCarTeethRange(car);
-  const el = $("teethRange");
-  if (el) {
-    el.textContent = `${range.min}–${range.max} total teeth`;
-  }
-}
-
-function updateTireConvertedDisplay() {
-  const tireInput = $("tire");
-  const out = $("tireConverted");
-  if (!tireInput || !out) return;
-  const mm = parseFloat(tireInput.value);
-  if (!mm || isNaN(mm)) {
-    out.textContent = "";
-    return;
-  }
-  const inches = mmToInches(mm);
-  out.textContent = `${inches.toFixed(3)} in`;
-}
-
-// --- Local gearing map ---
-function buildLocalTable() {
-  const headRow = $("localHeadRow");
-  const body = $("localBody");
-  if (!headRow || !body) return;
-
-  const { tire, car, desired } = readInputs();
-  const range = getCarTeethRange(car);
-
-  headRow.innerHTML = "";
-  const corner = document.createElement("th");
-  corner.className = "sticky-corner";
-  corner.textContent = "Spur ↓ / Pinion →";
-  headRow.appendChild(corner);
-
-  for (let p = MIN_PINION; p <= MAX_PINION; p++) {
-    const th = document.createElement("th");
-    th.textContent = p;
-    headRow.appendChild(th);
-  }
-
-  body.innerHTML = "";
-
-  for (let s = MIN_SPUR; s <= MAX_SPUR; s++) {
-    const tr = document.createElement("tr");
-
-    const spurCell = document.createElement("td");
-    spurCell.textContent = s;
-    tr.appendChild(spurCell);
-
-    for (let p = MIN_PINION; p <= MAX_PINION; p++) {
-      const td = document.createElement("td");
-      const total = totalTeeth(s, p);
-      const rollout = computeRollout(s, p, tire);
-      td.textContent = rollout ? formatRollout(rollout) : "";
-
-      const legal = total >= range.min && total <= range.max;
-      if (legal) td.classList.add("legal-gear");
-      else td.classList.add("illegal-gear");
-
-      if (s === currentSpur && p === currentPinion) {
-        td.classList.add("current-gear");
-      }
-      if (s === cursorSpur && p === cursorPinion) {
-        td.classList.add("cursor-cell");
-      }
-
-      td.dataset.spur = s;
-      td.dataset.pinion = p;
-
-      td.addEventListener("click", () => {
-        cursorSpur = s;
-        cursorPinion = p;
-        currentSpur = s;
-        currentPinion = p;
-        $("spur").value = s;
-        $("pinion").value = p;
-        buildLocalTable();
-        buildRecommendedTable();
-      });
-
-      tr.appendChild(td);
-    }
-
-    body.appendChild(tr);
-  }
-
-  highlightHeaders();
-}
-
-function highlightHeaders() {
-  const headRow = $("localHeadRow");
-  const body = $("localBody");
-  if (!headRow || !body) return;
-
-  Array.from(headRow.children).forEach(th => {
-    th.classList.remove("header-highlight");
-  });
-  Array.from(body.rows).forEach(row => {
-    row.cells[0].classList.remove("header-highlight");
-  });
-
-  const spurIndex = cursorSpur - MIN_SPUR + 1;
-  const pinionIndex = cursorPinion - MIN_PINION + 1;
-
-  if (headRow.children[pinionIndex]) {
-    headRow.children[pinionIndex].classList.add("header-highlight");
-  }
-  if (body.rows[cursorSpur - MIN_SPUR]) {
-    body.rows[cursorSpur - MIN_SPUR].cells[0].classList.add("header-highlight");
-  }
-}
-
-function centerOnCurrentGearing() {
-  cursorSpur = currentSpur;
-  cursorPinion = currentPinion;
-  buildLocalTable();
-}
-
-// --- Keyboard navigation ---
-function setupKeyboardNavigation() {
-  document.addEventListener("keydown", e => {
-    const table = $("localTable");
-    if (!table) return;
-
-    let moved = false;
-    if (e.key === "ArrowUp") {
-      if (cursorSpur > MIN_SPUR) {
-        cursorSpur--;
-        moved = true;
-      }
-    } else if (e.key === "ArrowDown") {
-      if (cursorSpur < MAX_SPUR) {
-        cursorSpur++;
-        moved = true;
-      }
-    } else if (e.key === "ArrowLeft") {
-      if (cursorPinion > MIN_PINION) {
-        cursorPinion--;
-        moved = true;
-      }
-    } else if (e.key === "ArrowRight") {
-      if (cursorPinion < MAX_PINION) {
-        cursorPinion++;
-        moved = true;
-      }
-    } else if (e.key === "Enter") {
-      currentSpur = cursorSpur;
-      currentPinion = cursorPinion;
-      $("spur").value = currentSpur;
-      $("pinion").value = currentPinion;
-      buildLocalTable();
-      buildRecommendedTable();
-      return;
-    }
-
-    if (moved) {
-      e.preventDefault();
-      buildLocalTable();
-    }
-  });
-}
-
-// --- Recommended gearing ---
-function buildRecommendedTable() {
-  const table = $("recommended");
-  if (!table) return;
-  const tbody = table.querySelector("tbody");
-  tbody.innerHTML = "";
-
-  const { tire, car, desired } = readInputs();
-  const range = getCarTeethRange(car);
-
-  const rows = [];
-  for (let s = MIN_SPUR; s <= MAX_SPUR; s++) {
-    for (let p = MIN_PINION; p <= MAX_PINION; p++) {
-      const total = totalTeeth(s, p);
-      const legal = total >= range.min && total <= range.max;
-      if (!legal) continue;
-      const rollout = computeRollout(s, p, tire);
-      if (!rollout) continue;
-
-      let delta = null;
-      if (desired != null && !isNaN(desired)) {
-        const desiredIn = desired < 10 ? desired : desired; // already inches
-        delta = rollout - desiredIn;
-      }
-
-      rows.push({ spur: s, pinion: p, total, rollout, delta });
-    }
-  }
-
-  rows.sort((a, b) => {
-    if (a.delta == null && b.delta == null) return 0;
-    if (a.delta == null) return 1;
-    if (b.delta == null) return -1;
-    return Math.abs(a.delta) - Math.abs(b.delta);
-  });
-
-  rows.forEach(r => {
-    const tr = document.createElement("tr");
-
-    const tdSpur = document.createElement("td");
-    tdSpur.textContent = r.spur;
-
-    const tdPinion = document.createElement("td");
-    tdPinion.textContent = r.pinion;
-
-    const tdTotal = document.createElement("td");
-    tdTotal.textContent = r.total;
-
-    const tdRollout = document.createElement("td");
-    tdRollout.textContent = formatRollout(r.rollout);
-
-    const tdDelta = document.createElement("td");
-    tdDelta.textContent =
-      r.delta == null ? "" : (r.delta >= 0 ? "+" : "") + r.delta.toFixed(3);
-
-    tr.appendChild(tdSpur);
-    tr.appendChild(tdPinion);
-    tr.appendChild(tdTotal);
-    tr.appendChild(tdRollout);
-    tr.appendChild(tdDelta);
-
-    tr.addEventListener("click", () => {
-      currentSpur = r.spur;
-      currentPinion = r.pinion;
-      cursorSpur = r.spur;
-      cursorPinion = r.pinion;
-      $("spur").value = r.spur;
-      $("pinion").value = r.pinion;
-      buildLocalTable();
-      buildRecommendedTable();
-    });
-
-    tbody.appendChild(tr);
-  });
-}
-
-// --- Inputs wiring ---
-function setupInputs() {
-  const spur = $("spur");
-  const pinion = $("pinion");
-  const tire = $("tire");
-  const car = $("car");
-  const desired = $("desiredRollout");
-  const centerBtn = $("centerBtn");
-
-  if (spur) {
-    spur.value = DEFAULT_SPUR;
-    spur.addEventListener("input", () => {
-      currentSpur = parseInt(spur.value, 10) || DEFAULT_SPUR;
-      cursorSpur = currentSpur;
-      buildLocalTable();
-      buildRecommendedTable();
-    });
-  }
-
-  if (pinion) {
-    pinion.value = DEFAULT_PINION;
-    pinion.addEventListener("input", () => {
-      currentPinion = parseInt(pinion.value, 10) || DEFAULT_PINION;
-      cursorPinion = currentPinion;
-      buildLocalTable();
-      buildRecommendedTable();
-    });
-  }
-
-  if (tire) {
-    tire.addEventListener("input", () => {
-      updateTireConvertedDisplay();
-      buildLocalTable();
-      buildRecommendedTable();
-    });
-  }
-
-  if (car) {
-    car.addEventListener("change", () => {
-      updateTeethRangeDisplay();
-      buildLocalTable();
-      buildRecommendedTable();
-    });
-  }
-
-  if (desired) {
-    desired.addEventListener("input", () => {
-      buildRecommendedTable();
-    });
-  }
-
-  if (centerBtn) {
-    centerBtn.addEventListener("click", () => {
-      centerOnCurrentGearing();
-    });
-  }
-}
-
-// --- Collapsible cards (shared) ---
 function setupCollapsibleCards() {
   document.querySelectorAll(".collapsible .card-header").forEach(header => {
     header.addEventListener("click", () => {
@@ -368,10 +11,10 @@ function setupCollapsibleCards() {
 }
 
 // =========================
-// HYBRID TIRE SYSTEM LOGIC
+// TIRE SET SYSTEM
 // =========================
 
-const TIRE_LS_KEY = "tireDataHybrid";
+const TIRE_LS_KEY = "tireSetSystemData";
 
 const defaultTireData = {
   thresholds: {
@@ -380,16 +23,34 @@ const defaultTireData = {
     old_min: 39.7
   },
   overrides: {},
-  metadata: {}
+  metadata: {},
+  racers: {
+    William: {
+      tire_sets: {
+        "12": {
+          identifier: "12",
+          LH: {
+            measured: 40.85,
+            status: "CUT",
+            wear: 78,
+            uses: 2,
+            last_used: "2026-03-28"
+          },
+          RH: {
+            measured: 40.8,
+            status: "CUT",
+            wear: 85,
+            uses: 1,
+            last_used: "2026-03-28"
+          },
+          rotation_history: [],
+          notes: "Batch B12, CRC"
+        }
+      }
+    }
+  },
+  history: []
 };
-
-const baseTireDiameters = [
-  41.0, 40.95, 40.9, 40.85, 40.8, 40.75, 40.7,
-  40.65, 40.6, 40.55, 40.5, 40.45, 40.4, 40.35,
-  40.3, 40.25, 40.2, 40.15, 40.1, 40.05, 40.0,
-  39.95, 39.9, 39.85, 39.8, 39.75, 39.7, 39.65,
-  39.6
-];
 
 function loadTireDataFromLocalStorage() {
   const raw = localStorage.getItem(TIRE_LS_KEY);
@@ -418,22 +79,18 @@ async function loadTireDataJson() {
 function mergeTireData(base, incoming) {
   const merged = structuredClone(base);
 
-  if (incoming.thresholds) {
-    merged.thresholds = structuredClone(incoming.thresholds);
-  }
-
+  if (incoming.thresholds) merged.thresholds = structuredClone(incoming.thresholds);
   if (incoming.overrides) {
-    merged.overrides = {
-      ...merged.overrides,
-      ...incoming.overrides
-    };
+    merged.overrides = { ...merged.overrides, ...incoming.overrides };
   }
-
   if (incoming.metadata) {
-    merged.metadata = {
-      ...merged.metadata,
-      ...incoming.metadata
-    };
+    merged.metadata = { ...merged.metadata, ...incoming.metadata };
+  }
+  if (incoming.racers) {
+    merged.racers = { ...merged.racers, ...incoming.racers };
+  }
+  if (incoming.history) {
+    merged.history = [...merged.history, ...incoming.history];
   }
 
   return merged;
@@ -444,110 +101,457 @@ function getEffectiveTireData() {
   return ls ? ls : structuredClone(defaultTireData);
 }
 
-function classifyTire(diameter, data) {
-  const d = parseFloat(diameter.toFixed(2));
-  const key = d.toFixed(2);
-
-  if (data.overrides && data.overrides[key]) {
-    return data.overrides[key];
+// Wear model
+function getWearLoss(status, grip) {
+  let base = 0;
+  switch (status) {
+    case "NEW": base = 2; break;
+    case "CUT": base = 4; break;
+    case "OLD": base = 6; break;
+    case "DO_NOT_USE": base = 10; break;
+    default: base = 3; break;
   }
-
-  const { new_min, cut_min, old_min } = data.thresholds;
-  if (d >= new_min) return "NEW";
-  if (d >= cut_min) return "CUT";
-  if (d >= old_min) return "OLD";
-  return "DO_NOT_USE";
+  let mult = 1.0;
+  if (grip === "MEDIUM") mult = 1.3;
+  else if (grip === "HIGH") mult = 1.6;
+  return base * mult;
 }
 
-function buildTireTable(data) {
-  const tbody = document.querySelector("#tireTable tbody");
+// UI helpers
+function $(id) {
+  return document.getElementById(id);
+}
+
+function getSelectedRacer(data) {
+  const sel = $("racerSelect");
+  if (!sel) return null;
+  const name = sel.value;
+  if (!name || !data.racers[name]) return null;
+  return name;
+}
+
+function ensureRacerExists(data, name) {
+  if (!data.racers[name]) {
+    data.racers[name] = { tire_sets: {} };
+  }
+}
+
+// Build racer select + history filter
+function buildRacerSelects(data) {
+  const racerSelect = $("racerSelect");
+  const historyRacerFilter = $("historyRacerFilter");
+  const logRacer = $("logRacer");
+
+  const racerNames = Object.keys(data.racers).sort();
+
+  if (racerSelect) {
+    racerSelect.innerHTML = "";
+    racerNames.forEach(r => {
+      const opt = document.createElement("option");
+      opt.value = r;
+      opt.textContent = r;
+      racerSelect.appendChild(opt);
+    });
+  }
+
+  if (historyRacerFilter) {
+    historyRacerFilter.innerHTML = "";
+    const allOpt = document.createElement("option");
+    allOpt.value = "ALL";
+    allOpt.textContent = "All";
+    historyRacerFilter.appendChild(allOpt);
+    racerNames.forEach(r => {
+      const opt = document.createElement("option");
+      opt.value = r;
+      opt.textContent = r;
+      historyRacerFilter.appendChild(opt);
+    });
+  }
+
+  if (logRacer) {
+    logRacer.innerHTML = "";
+    racerNames.forEach(r => {
+      const opt = document.createElement("option");
+      opt.value = r;
+      opt.textContent = r;
+      logRacer.appendChild(opt);
+    });
+  }
+}
+
+// Build tire set table
+function buildTireSetTable(data) {
+  const tbody = document.querySelector("#tireSetTable tbody");
   if (!tbody) return;
 
   tbody.innerHTML = "";
 
-  baseTireDiameters.forEach(mm => {
-    const mmFixed = mm.toFixed(2);
-    const inches = (mm / 25.4).toFixed(3);
-    const status = classifyTire(mm, data);
+  const racerName = getSelectedRacer(data);
+  if (!racerName) return;
+
+  const racer = data.racers[racerName];
+  const sets = racer.tire_sets || {};
+  const setIds = Object.keys(sets).sort();
+
+  setIds.forEach(setId => {
+    const set = sets[setId];
 
     const tr = document.createElement("tr");
-    tr.dataset.mm = mmFixed;
-    tr.classList.add("tire-status-" + status);
 
-    const tdMm = document.createElement("td");
-    tdMm.textContent = mmFixed;
+    const tdId = document.createElement("td");
+    tdId.textContent = set.identifier || setId;
 
-    const tdIn = document.createElement("td");
-    tdIn.textContent = inches;
+    const tdLh = document.createElement("td");
+    const lh = set.LH || {};
+    tdLh.textContent = `${(lh.measured ?? "").toString()} / ${(lh.status || "")} / ${(lh.wear ?? "").toString()}`;
 
-    const tdStatus = document.createElement("td");
-    const select = document.createElement("select");
-    select.className = "tire-status-select";
+    const tdRh = document.createElement("td");
+    const rh = set.RH || {};
+    tdRh.textContent = `${(rh.measured ?? "").toString()} / ${(rh.status || "")} / ${(rh.wear ?? "").toString()}`;
 
-    const options = ["AUTO", "NEW", "CUT", "OLD", "DO_NOT_USE"];
-    options.forEach(opt => {
-      const o = document.createElement("option");
-      o.value = opt;
-      o.textContent = opt === "DO_NOT_USE" ? "DO NOT USE" : opt;
-      select.appendChild(o);
+    const tdUses = document.createElement("td");
+    const totalUses = (lh.uses || 0) + (rh.uses || 0);
+    tdUses.textContent = totalUses;
+
+    const tdLast = document.createElement("td");
+    const lastDates = [lh.last_used, rh.last_used].filter(Boolean).sort();
+    tdLast.textContent = lastDates.length ? lastDates[lastDates.length - 1] : "";
+
+    const tdLog = document.createElement("td");
+    const btn = document.createElement("button");
+    btn.textContent = "Log Run";
+    btn.addEventListener("click", () => openLogRunModal(data, racerName, setId));
+    tdLog.appendChild(btn);
+
+    tr.addEventListener("click", e => {
+      if (e.target === btn) return;
+      openLogRunModal(data, racerName, setId);
     });
 
-    const key = mmFixed;
-    select.value = data.overrides[key] || "AUTO";
+    tr.appendChild(tdId);
+    tr.appendChild(tdLh);
+    tr.appendChild(tdRh);
+    tr.appendChild(tdUses);
+    tr.appendChild(tdLast);
+    tr.appendChild(tdLog);
 
-    select.addEventListener("change", () => {
-      const current = getEffectiveTireData();
-      const val = select.value;
+    tbody.appendChild(tr);
+  });
 
-      if (val === "AUTO") {
-        delete current.overrides[key];
-      } else {
-        current.overrides[key] = val;
-      }
+  buildLogSetSelect(data, racerName);
+}
 
-      saveTireDataToLocalStorage(current);
-      buildTireTable(current);
-      applyTireFilter();
-    });
+// Build log modal set select
+function buildLogSetSelect(data, racerName) {
+  const logSetId = $("logSetId");
+  if (!logSetId) return;
+  logSetId.innerHTML = "";
 
-    tdStatus.appendChild(select);
+  if (!racerName || !data.racers[racerName]) return;
 
-    tr.appendChild(tdMm);
-    tr.appendChild(tdIn);
-    tr.appendChild(tdStatus);
+  const sets = data.racers[racerName].tire_sets || {};
+  const setIds = Object.keys(sets).sort();
+
+  setIds.forEach(id => {
+    const set = sets[id];
+    const opt = document.createElement("option");
+    opt.value = id;
+    const lh = set.LH || {};
+    const rh = set.RH || {};
+    opt.textContent = `${set.identifier || id} (LH: ${lh.measured ?? "?"}, RH: ${rh.measured ?? "?"})`;
+    logSetId.appendChild(opt);
+  });
+}
+
+// Build history table
+function buildHistoryTable(data) {
+  const tbody = document.querySelector("#tireHistoryTable tbody");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+
+  const racerFilter = $("historyRacerFilter")?.value || "ALL";
+  const eventFilter = $("historyEventFilter")?.value.trim().toLowerCase() || "";
+  const trackFilter = $("historyTrackFilter")?.value.trim().toLowerCase() || "";
+  const sideFilter = $("historySideFilter")?.value || "ALL";
+
+  const entries = (data.history || []).slice().sort((a, b) => {
+    return (b.date || "").localeCompare(a.date || "");
+  });
+
+  entries.forEach(h => {
+    if (racerFilter !== "ALL" && h.racer !== racerFilter) return;
+    if (sideFilter !== "ALL" && h.side !== sideFilter) return;
+    if (eventFilter && !(h.event || "").toLowerCase().includes(eventFilter)) return;
+    if (trackFilter && !(h.track || "").toLowerCase().includes(trackFilter)) return;
+
+    const tr = document.createElement("tr");
+
+    const tdDate = document.createElement("td");
+    tdDate.textContent = h.date || "";
+
+    const tdRacer = document.createElement("td");
+    tdRacer.textContent = h.racer || "";
+
+    const tdSet = document.createElement("td");
+    tdSet.textContent = h.set_id || "";
+
+    const tdSide = document.createElement("td");
+    tdSide.textContent = h.side || "";
+
+    const tdEvent = document.createElement("td");
+    tdEvent.textContent = h.event || "";
+
+    const tdTrack = document.createElement("td");
+    tdTrack.textContent = h.track || "";
+
+    const tdGrip = document.createElement("td");
+    tdGrip.textContent = h.grip || "";
+
+    const tdRot = document.createElement("td");
+    tdRot.textContent = h.rotation || "";
+
+    const tdNotes = document.createElement("td");
+    tdNotes.textContent = h.notes || "";
+
+    tr.appendChild(tdDate);
+    tr.appendChild(tdRacer);
+    tr.appendChild(tdSet);
+    tr.appendChild(tdSide);
+    tr.appendChild(tdEvent);
+    tr.appendChild(tdTrack);
+    tr.appendChild(tdGrip);
+    tr.appendChild(tdRot);
+    tr.appendChild(tdNotes);
 
     tbody.appendChild(tr);
   });
 }
 
-function applyTireFilter() {
-  const filterInput = document.getElementById("tireFilter");
-  const tbody = document.querySelector("#tireTable tbody");
-  if (!filterInput || !tbody) return;
-
-  const q = filterInput.value.trim().toLowerCase();
-  Array.from(tbody.rows).forEach(row => {
-    const mm = row.cells[0].textContent.toLowerCase();
-    const inch = row.cells[1].textContent.toLowerCase();
-    row.style.display = (!q || mm.includes(q) || inch.includes(q)) ? "" : "none";
+// Add racer
+function setupAddRacer(data) {
+  const btn = $("addRacerBtn");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    const name = prompt("Enter racer name:");
+    if (!name) return;
+    ensureRacerExists(data, name);
+    saveTireDataToLocalStorage(data);
+    buildRacerSelects(data);
+    buildTireSetTable(data);
+    buildHistoryTable(data);
   });
 }
 
-function setupTireFilter() {
-  const filterInput = document.getElementById("tireFilter");
-  if (!filterInput) return;
-  filterInput.addEventListener("input", applyTireFilter);
+// Add tire set modal
+function openAddTireSetModal() {
+  $("addTireSetModal")?.classList.remove("hidden");
 }
 
-function setupTireExportImport() {
-  const exportBtn = document.getElementById("exportTireJson");
-  const importInput = document.getElementById("importTireJson");
-  const resetBtn = document.getElementById("resetTireOverrides");
+function closeAddTireSetModal() {
+  $("addTireSetModal")?.classList.add("hidden");
+}
+
+function setupAddTireSet(data) {
+  const btn = $("addTireSetBtn");
+  if (!btn) return;
+
+  btn.addEventListener("click", () => {
+    const racerName = getSelectedRacer(data);
+    if (!racerName) {
+      alert("Select a racer first.");
+      return;
+    }
+    $("newSetId").value = "";
+    $("newSetLhMm").value = "";
+    $("newSetRhMm").value = "";
+    $("newSetNotes").value = "";
+    openAddTireSetModal();
+  });
+
+  $("cancelNewSetBtn")?.addEventListener("click", () => {
+    closeAddTireSetModal();
+  });
+
+  $("saveNewSetBtn")?.addEventListener("click", () => {
+    const racerName = getSelectedRacer(data);
+    if (!racerName) {
+      alert("No racer selected.");
+      return;
+    }
+    const id = $("newSetId").value.trim();
+    const lhMm = parseFloat($("newSetLhMm").value);
+    const rhMm = parseFloat($("newSetRhMm").value);
+    const notes = $("newSetNotes").value.trim();
+
+    if (!id) {
+      alert("Set identifier is required.");
+      return;
+    }
+
+    ensureRacerExists(data, racerName);
+    const racer = data.racers[racerName];
+    if (!racer.tire_sets) racer.tire_sets = {};
+    if (racer.tire_sets[id]) {
+      alert("A tire set with this identifier already exists for this racer.");
+      return;
+    }
+
+    racer.tire_sets[id] = {
+      identifier: id,
+      LH: {
+        measured: isNaN(lhMm) ? null : lhMm,
+        status: "NEW",
+        wear: 100,
+        uses: 0,
+        last_used: null
+      },
+      RH: {
+        measured: isNaN(rhMm) ? null : rhMm,
+        status: "NEW",
+        wear: 100,
+        uses: 0,
+        last_used: null
+      },
+      rotation_history: [],
+      notes
+    };
+
+    saveTireDataToLocalStorage(data);
+    closeAddTireSetModal();
+    buildTireSetTable(data);
+  });
+}
+
+// Log run modal
+let currentLogSetId = null;
+
+function openLogRunModal(data, racerName, setId) {
+  currentLogSetId = setId;
+
+  const logRacer = $("logRacer");
+  if (logRacer) {
+    logRacer.value = racerName;
+  }
+
+  buildLogSetSelect(data, racerName);
+  const logSetId = $("logSetId");
+  if (logSetId) {
+    logSetId.value = setId;
+  }
+
+  $("logSide").value = "LH";
+  $("logMeasured").value = "";
+  $("logRotation").value = "NONE";
+  $("logEvent").value = "";
+  $("logTrack").value = "";
+  $("logGrip").value = "MEDIUM";
+  $("logNotes").value = "";
+
+  $("logRunModal")?.classList.remove("hidden");
+}
+
+function closeLogRunModal() {
+  $("logRunModal")?.classList.add("hidden");
+}
+
+function setupLogRunModal(data) {
+  $("cancelLogRunBtn")?.addEventListener("click", () => {
+    closeLogRunModal();
+  });
+
+  $("logRacer")?.addEventListener("change", () => {
+    const racerName = $("logRacer").value;
+    buildLogSetSelect(data, racerName);
+  });
+
+  $("saveLogRunBtn")?.addEventListener("click", () => {
+    const racerName = $("logRacer").value;
+    const setId = $("logSetId").value;
+    const side = $("logSide").value;
+    const measured = parseFloat($("logMeasured").value);
+    const rotation = $("logRotation").value;
+    const eventName = $("logEvent").value.trim();
+    const track = $("logTrack").value.trim();
+    const grip = $("logGrip").value;
+    const notes = $("logNotes").value.trim();
+
+    if (!racerName || !data.racers[racerName]) {
+      alert("Invalid racer.");
+      return;
+    }
+    const racer = data.racers[racerName];
+    if (!racer.tire_sets || !racer.tire_sets[setId]) {
+      alert("Invalid tire set.");
+      return;
+    }
+
+    const set = racer.tire_sets[setId];
+    const sideObj = set[side];
+    if (!sideObj) {
+      alert("Invalid side.");
+      return;
+    }
+
+    // Update measured if provided
+    if (!isNaN(measured)) {
+      sideObj.measured = measured;
+    }
+
+    // Wear model
+    const wearLoss = getWearLoss(sideObj.status || "NEW", grip);
+    sideObj.wear = Math.max(0, (sideObj.wear ?? 100) - wearLoss);
+    sideObj.uses = (sideObj.uses || 0) + 1;
+    const today = new Date().toISOString().slice(0, 10);
+    sideObj.last_used = today;
+
+    // Rotation
+    let rotationLabel = "None";
+    if (rotation === "LH_TO_RH" || rotation === "RH_TO_LH") {
+      const from = rotation === "LH_TO_RH" ? "LH" : "RH";
+      const to = rotation === "LH_TO_RH" ? "RH" : "LH";
+      const tmp = structuredClone(set[from]);
+      set[from] = structuredClone(set[to]);
+      set[to] = tmp;
+      set.rotation_history.push({
+        date: today,
+        from,
+        to
+      });
+      rotationLabel = `${from}→${to}`;
+    }
+
+    // History entry
+    if (!data.history) data.history = [];
+    data.history.push({
+      racer: racerName,
+      set_id: setId,
+      side,
+      date: today,
+      event: eventName,
+      track,
+      grip,
+      rotation: rotationLabel,
+      notes
+    });
+
+    saveTireDataToLocalStorage(data);
+    closeLogRunModal();
+    buildTireSetTable(data);
+    buildHistoryTable(data);
+  });
+}
+
+// Export / import / reset
+function setupExportImportReset(data) {
+  const exportBtn = $("exportTireJson");
+  const importInput = $("importTireJson");
+  const resetBtn = $("resetTireData");
 
   if (exportBtn) {
     exportBtn.addEventListener("click", () => {
-      const data = getEffectiveTireData();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const current = getEffectiveTireData();
+      const blob = new Blob([JSON.stringify(current, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -570,8 +574,7 @@ function setupTireExportImport() {
           const current = getEffectiveTireData();
           const merged = mergeTireData(current, incoming);
           saveTireDataToLocalStorage(merged);
-          buildTireTable(merged);
-          applyTireFilter();
+          initTireSystem(merged);
         } catch {
           alert("Invalid JSON file.");
         }
@@ -582,46 +585,64 @@ function setupTireExportImport() {
 
   if (resetBtn) {
     resetBtn.addEventListener("click", () => {
-      if (!confirm("Reset all tire overrides to defaults?")) return;
+      if (!confirm("Reset all tire data to defaults?")) return;
       localStorage.removeItem(TIRE_LS_KEY);
-      const data = structuredClone(defaultTireData);
-      saveTireDataToLocalStorage(data);
-      buildTireTable(data);
-      applyTireFilter();
+      const fresh = structuredClone(defaultTireData);
+      saveTireDataToLocalStorage(fresh);
+      initTireSystem(fresh);
     });
   }
 }
 
-// =========================
-// PAGE INITIALIZATION
-// =========================
+// History filters
+function setupHistoryFilters(data) {
+  ["historyRacerFilter", "historyEventFilter", "historyTrackFilter", "historySideFilter"].forEach(id => {
+    const el = $(id);
+    if (el) {
+      el.addEventListener("input", () => buildHistoryTable(data));
+      el.addEventListener("change", () => buildHistoryTable(data));
+    }
+  });
+}
 
-document.addEventListener("DOMContentLoaded", async () => {
-  setupCollapsibleCards();
-
-  // If main calculator elements exist, init calculator
-  if ($("localTable") && $("recommended")) {
-    setupInputs();
-    updateTeethRangeDisplay();
-    updateTireConvertedDisplay();
-    buildLocalTable();
-    buildRecommendedTable();
-    setupKeyboardNavigation();
-  }
-
-  // If tire table exists, init tire system
-  const tireTable = document.getElementById("tireTable");
-  if (tireTable) {
-    let data = loadTireDataFromLocalStorage();
+// Initialize tire system
+async function initTireSystem(existingData) {
+  let data = existingData;
+  if (!data) {
+    data = loadTireDataFromLocalStorage();
     if (!data) {
       const jsonData = await loadTireDataJson();
       data = jsonData || structuredClone(defaultTireData);
       saveTireDataToLocalStorage(data);
     }
+  }
 
-    buildTireTable(data);
-    setupTireFilter();
-    setupTireExportImport();
-    applyTireFilter();
+  buildRacerSelects(data);
+  buildTireSetTable(data);
+  buildHistoryTable(data);
+  setupAddRacer(data);
+  setupAddTireSet(data);
+  setupLogRunModal(data);
+  setupExportImportReset(data);
+  setupHistoryFilters(data);
+
+  const racerSelect = $("racerSelect");
+  if (racerSelect) {
+    racerSelect.addEventListener("change", () => {
+      buildTireSetTable(data);
+    });
+  }
+}
+
+// =========================
+// PAGE INIT
+// =========================
+
+document.addEventListener("DOMContentLoaded", async () => {
+  setupCollapsibleCards();
+
+  const tireSetTable = document.getElementById("tireSetTable");
+  if (tireSetTable) {
+    await initTireSystem(null);
   }
 });
