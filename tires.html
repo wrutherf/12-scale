@@ -23,10 +23,6 @@
 
     <div class="card-content">
       <div class="tire-toolbar">
-        <label>Racer
-          <select id="racerSelect"></select>
-        </label>
-
         <button id="addRacerBtn">Add Racer</button>
         <button id="addTireSetBtn">Add Tire Set</button>
 
@@ -38,6 +34,24 @@
         </label>
 
         <button id="resetTireData">Reset Tire Data</button>
+      </div>
+
+      <div class="tire-history-toolbar" style="margin-bottom:10px;">
+        <label>Filter by Racer (usage)
+          <select id="tireSetRacerFilter">
+            <option value="ALL">All</option>
+          </select>
+        </label>
+
+        <label>Filter by Status
+          <select id="tireSetStatusFilter">
+            <option value="ALL">All</option>
+            <option value="NEW">NEW</option>
+            <option value="CUT">CUT</option>
+            <option value="OLD">OLD</option>
+            <option value="DO_NOT_USE">DO_NOT_USE</option>
+          </select>
+        </label>
       </div>
 
       <div class="scroll-container">
@@ -52,9 +66,7 @@
               <th>Log Run</th>
             </tr>
           </thead>
-          <tbody>
-            <!-- rows built by JS -->
-          </tbody>
+          <tbody></tbody>
         </table>
       </div>
     </div>
@@ -104,9 +116,7 @@
               <th>Notes</th>
             </tr>
           </thead>
-          <tbody>
-            <!-- history rows built by JS -->
-          </tbody>
+          <tbody></tbody>
         </table>
       </div>
     </div>
