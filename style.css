@@ -1,258 +1,241 @@
-/* GLOBAL */
+/* =====================================================
+   GLOBAL LAYOUT + THEME
+   ===================================================== */
+
 body {
+  margin: 0;
+  padding: 0;
   background: #111;
   color: #eee;
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 20px;
+  font-family: "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 header {
-  margin-bottom: 20px;
+  width: 100%;
+  padding: 20px 0;
+  text-align: center;
+  background: #181818;
+  border-bottom: 1px solid #333;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
 }
 
 .nav-link {
-  color: #7fbfff;
+  color: #66aaff;
   text-decoration: none;
+  font-size: 16px;
 }
 
 .nav-link:hover {
   text-decoration: underline;
 }
 
-/* CARDS */
+/* =====================================================
+   CARD / PANEL LAYOUT (80% WIDTH)
+   ===================================================== */
+
 .card {
-  background: #1b1b1b;
+  width: 80vw;
+  max-width: 1400px;
+  margin: 25px auto;
+  padding: 20px;
+  background: #1a1a1a;
   border-radius: 10px;
-  margin-bottom: 20px;
-  overflow: hidden;
-  border: 1px solid #333;
+  box-shadow: 0 0 12px rgba(0,0,0,0.4);
+  transition: all 0.25s ease;
 }
 
-/* COLLAPSIBLE HEADER */
 .card-header {
-  background: #222;
-  padding: 12px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
-  user-select: none;
 }
 
 .card-header h2 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 22px;
+  font-weight: 600;
 }
 
 .collapse-arrow {
-  font-size: 1.2rem;
-  transition: transform 0.5s ease;
+  font-size: 18px;
+  opacity: 0.7;
 }
 
-.card.collapsed .collapse-arrow {
-  transform: rotate(-90deg);
+.collapsible.collapsed .card-content {
+  display: none;
 }
 
-.card-content {
-  padding: 16px;
-  opacity: 1;
-  max-height: 2000px;
-  overflow: hidden;
-  transition:
-    max-height 0.5s ease,
-    opacity 0.5s ease;
-}
+/* =====================================================
+   INPUT ROWS
+   ===================================================== */
 
-.card.collapsed .card-content {
-  max-height: 0;
-  opacity: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-/* INPUT ROWS */
-.input-row.inline {
+.input-row {
   display: flex;
-  gap: 20px;
   flex-wrap: wrap;
+  gap: 20px;
 }
 
-label {
+.input-row.inline label {
   display: flex;
   flex-direction: column;
-  font-size: 0.9rem;
+  font-size: 14px;
 }
 
-input,
-select,
-textarea {
-  background: #222;
-  color: #fff;
-  border: 1px solid #444;
-  padding: 6px;
+input[type="number"],
+select {
+  padding: 6px 8px;
+  font-size: 15px;
   border-radius: 6px;
+  border: 1px solid #444;
+  background: #222;
+  color: #eee;
 }
 
-textarea {
-  min-height: 60px;
+input[type="number"]:focus,
+select:focus {
+  outline: none;
+  border-color: #66aaff;
 }
 
-/* TABLES */
-.scroll-container {
-  max-height: 400px;
-  overflow: auto;
-  border: 1px solid #333;
-  border-radius: 8px;
+/* =====================================================
+   DUAL‑UNIT DISPLAY
+   ===================================================== */
+
+.dual-unit {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.2;
 }
+
+.secondary-unit {
+  opacity: 0.6;
+  font-size: 12px;
+}
+
+#tireManualIndicator {
+  margin-top: 3px;
+  font-size: 12px;
+  color: #ffaa66;
+}
+
+/* =====================================================
+   TABLES (LOCAL GRID + RECOMMENDED)
+   ===================================================== */
 
 table {
   width: 100%;
   border-collapse: collapse;
-}
-
-th,
-td {
-  border: 1px solid #333;
-  padding: 6px 10px;
-  text-align: center;
-  background: #1b1b1b;
-}
-
-/* LOCAL MAP HIGHLIGHTING */
-.legal-gear {
-  background: #123312;
-}
-
-.illegal-gear {
-  background: #2a1b1b;
-}
-
-.current-gear {
-  outline: 2px solid #7fbfff;
-}
-
-.cursor-cell {
-  outline: 2px dashed #ffbf7f;
-}
-
-.header-highlight {
-  background: #333366;
-}
-
-/* TIRE STATUS COLORS */
-.tire-status-NEW {
-  background: #0a4f0a;
-  color: #d0ffd0;
-}
-
-.tire-status-CUT {
-  background: #003f7f;
-  color: #d0e8ff;
-}
-
-.tire-status-OLD {
-  background: #7f6a00;
-  color: #fff4c2;
-}
-
-.tire-status-DO_NOT_USE {
-  background: #5f0000;
-  color: #ffd0d0;
-}
-
-/* TIRE TOOLBARS */
-.tire-toolbar,
-.tire-history-toolbar {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-
-.tire-toolbar button,
-.tire-toolbar label,
-.tire-history-toolbar label {
-  background: #333;
-  color: #eee;
-  border: 1px solid #555;
-  border-radius: 999px;
-  padding: 6px 14px;
-  cursor: pointer;
-  font-size: 0.8rem;
-}
-
-.tire-toolbar button:hover,
-.tire-history-toolbar label:hover {
-  background: #444;
-}
-
-.tire-toolbar label input,
-.tire-history-toolbar label input,
-.tire-toolbar label select,
-.tire-history-toolbar label select {
-  margin-top: 4px;
-  border-radius: 6px;
-  border: 1px solid #444;
-  background: #222;
-  color: #eee;
-}
-
-/* MODALS */
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal.hidden {
-  display: none;
-}
-
-.modal-content {
-  background: #1b1b1b;
-  border-radius: 10px;
-  padding: 20px;
-  width: 320px;
-  max-width: 90vw;
-  border: 1px solid #444;
-}
-
-.modal-content h3 {
-  margin-top: 0;
-  margin-bottom: 10px;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
   margin-top: 10px;
 }
 
-.modal-actions button {
+th, td {
+  padding: 6px 8px;
+  text-align: center;
+  border: 1px solid #333;
+}
+
+th {
+  background: #222;
+  font-weight: 600;
+}
+
+td {
+  background: #181818;
+}
+
+/* =====================================================
+   LOCAL GRID — DUAL‑UNIT CELLS
+   ===================================================== */
+
+.dual-unit-cell {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.dual-unit-cell .primary-unit {
+  font-size: 14px;
+}
+
+.dual-unit-cell .secondary-unit {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+/* =====================================================
+   LEGAL / ILLEGAL GEAR COLORING
+   ===================================================== */
+
+.legal-gear {
+  background: #1f2a1f;
+}
+
+.illegal-gear {
+  background: #2a1f1f;
+  opacity: 0.6;
+}
+
+/* =====================================================
+   CURRENT GEAR HIGHLIGHT (CENTER CELL)
+   ===================================================== */
+
+.current-gear {
+  background: #0044aa !important;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.6);
+}
+
+/* =====================================================
+   BEST RECOMMENDATION HIGHLIGHT
+   ===================================================== */
+
+.best-recommendation {
+  background: #003300 !important;
+  color: #aaffaa;
+  font-weight: 600;
+}
+
+/* =====================================================
+   BUTTONS
+   ===================================================== */
+
+button {
+  padding: 8px 14px;
   background: #333;
   color: #eee;
   border: 1px solid #555;
-  border-radius: 999px;
-  padding: 6px 14px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 14px;
 }
 
-.modal-actions button.secondary {
-  background: #222;
-}
-
-.modal-actions button:hover {
+button:hover {
   background: #444;
+  border-color: #66aaff;
 }
 
-/* BUTTONS */
-button {
-  font-family: inherit;
+/* =====================================================
+   SCROLL CONTAINER (NO LONGER USED FOR GRID)
+   ===================================================== */
+
+.scroll-container {
+  overflow: visible; /* grid is now fixed-size, no scrolling */
+}
+
+/* =====================================================
+   RESPONSIVE TWEAKS
+   ===================================================== */
+
+@media (max-width: 900px) {
+  .card {
+    width: 95vw;
+  }
 }
