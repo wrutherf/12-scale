@@ -55,13 +55,40 @@ function totalTeeth(spur, pinion) {
   return spur + pinion;
 }
 
+// =========================
+// DESIRED ROLLOUT (DUAL UNIT)
+// =========================
+
+function interpretDesiredRollout() {
+  const raw = parseFloat($("desiredRollout").value);
+  const label = $("desiredRolloutUnits");
+
+  if (isNaN(raw)) {
+    label.textContent = "";
+    return null;
+  }
+
+  // <10 → inches
+  if (raw < 10) {
+    label.textContent = `Interpreted as: ${raw.toFixed(3)} in`;
+    return raw;
+  }
+
+  // ≥10 → mm
+  const inches = raw / 25.4;
+  label.textContent = `Interpreted as: ${raw.toFixed(2)} mm → ${inches.toFixed(3)} in`;
+  return inches;
+}
+
 function readInputs() {
   const spur = parseInt($("spur")?.value, 10) || DEFAULT_SPUR;
   const pinion = parseInt($("pinion")?.value, 10) || DEFAULT_PINION;
   const tire = parseFloat($("tire")?.value) || 40.0;
   const car = $("car")?.value || "a12x";
-  const desired = parseFloat($("desiredRollout")?.value);
-  return { spur, pinion, tire, car, desired: isNaN(desired) ? null : desired };
+
+  const desiredInches = interpretDesiredRollout();
+
+  return { spur, pinion, tire, car, desired: desiredInches };
 }
 
 function updateTeethRangeDisplay() {
@@ -83,6 +110,7 @@ function updateTireConvertedDisplay() {
   const inches = mmToInches(mm);
   out.textContent = `${inches.toFixed(3)} in`;
 }
+
 // =========================
 // LOCAL GEARING MAP
 // =========================
@@ -333,6 +361,7 @@ function setupCalculatorInputs() {
 
   if (desired) {
     desired.addEventListener("input", () => {
+      interpretDesiredRollout();
       buildRecommendedTable();
     });
   }
@@ -527,116 +556,4 @@ function buildRacerSelects() {
 
 function buildTireSetTable() {
   const tbody = document.querySelector("#tireSetTable tbody");
-  if (!tbody) return;
-
-  tbody.innerHTML = "";
-
-  const racerFilter = $("tireSetRacerFilter")?.value || "ALL";
-  const statusFilter = $("tireSetStatusFilter")?.value || "ALL";
-
-  const sets = tireData.tire_sets || {};
-  const setIds = Object.keys(sets).sort();
-
-  const racerUsage = {};
-  (tireData.history || []).forEach(h => {
-    if (!h.racer || !h.set_id) return;
-    if (!racerUsage[h.racer]) racerUsage[h.racer] = new Set();
-    racerUsage[h.racer].add(h.set_id);
-  });
-
-  setIds.forEach(setId => {
-    const set = sets[setId];
-    const lh = set.LH || {};
-    const rh = set.RH || {};
-
-    if (statusFilter !== "ALL") {
-      const lhStatus = lh.status || "";
-      const rhStatus = rh.status || "";
-      if (lhStatus !== statusFilter && rhStatus !== statusFilter) return;
-    }
-
-    if (racerFilter !== "ALL") {
-      const usedBy = racerUsage[racerFilter];
-      if (!usedBy || !usedBy.has(setId)) return;
-    }
-
-    const tr = document.createElement("tr");
-
-    const tdId = document.createElement("td");
-    tdId.textContent = set.identifier || setId;
-
-    const tdLh = document.createElement("td");
-    tdLh.textContent = `${(lh.measured ?? "").toString()} / ${(lh.status || "")} / ${(lh.wear ?? "").toString()}`;
-
-    const tdRh = document.createElement("td");
-    tdRh.textContent = `${(rh.measured ?? "").toString()} / ${(rh.status || "")} / ${(rh.wear ?? "").toString()}`;
-
-    const tdUses = document.createElement("td");
-    const totalUses = (lh.uses || 0) + (rh.uses || 0);
-    tdUses.textContent = totalUses;
-
-    const tdLast = document.createElement("td");
-    const lastDates = [lh.last_used, rh.last_used].filter(Boolean).sort();
-    tdLast.textContent = lastDates.length ? lastDates[lastDates.length - 1] : "";
-
-    const tdLog = document.createElement("td");
-    const btn = document.createElement("button");
-    btn.textContent = "Log Run";
-    btn.addEventListener("click", () => openLogRunModal(setId));
-    tdLog.appendChild(btn);
-
-    tr.addEventListener("click", e => {
-      if (e.target === btn) return;
-      openLogRunModal(setId);
-    });
-
-    tr.appendChild(tdId);
-    tr.appendChild(tdLh);
-    tr.appendChild(tdRh);
-    tr.appendChild(tdUses);
-    tr.appendChild(tdLast);
-    tr.appendChild(tdLog);
-
-    tbody.appendChild(tr);
-  });
-
-  buildCalcTireSetSelect();
-  buildLogSetSelect();
-}
-
-// =========================
-// LOG RUN MODAL
-// =========================
-
-function buildLogSetSelect() {
-  const logSetId = $("logSetId");
-  if (!logSetId) return;
-  logSetId.innerHTML = "";
-
-  const sets = tireData.tire_sets || {};
-  const setIds = Object.keys(sets).sort();
-
-  setIds.forEach(id => {
-    const set = sets[id];
-    const opt = document.createElement("option");
-    opt.value = id;
-    const lh = set.LH || {};
-    const rh = set.RH || {};
-    opt.textContent = `${set.identifier || id} (LH: ${lh.measured ?? "?"}, RH: ${rh.measured ?? "?"})`;
-    logSetId.appendChild(opt);
-  });
-}
-
-function openLogRunModal(setId) {
-  const logRacer = $("logRacer");
-  const logSetId = $("logSetId");
-
-  if (logSetId) {
-    buildLogSetSelect();
-    logSetId.value = setId;
-  }
-
-  if (logRacer) {
-    const racerNames = Object.keys(tireData.racers || {});
-
-
+  if (!tbody
