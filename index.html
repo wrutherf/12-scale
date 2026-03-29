@@ -1,46 +1,113 @@
-{
-  "thresholds": { ... },
-  "overrides": { ... },
-  "metadata": { ... },
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rollout Calculator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-  "racers": {
-    "William": {},
-    "John": {}
-  },
+  <header>
+    <h1>Rollout Calculator</h1>
+    <nav>
+      <a href="tires.html" class="nav-link">Tire Sets & History</a>
+    </nav>
+  </header>
 
-  "tire_sets": {
-    "12": {
-      "identifier": "12",
-      "LH": {
-        "measured": 40.85,
-        "status": "CUT",
-        "wear": 78,
-        "uses": 2,
-        "last_used": "2026-03-28"
-      },
-      "RH": {
-        "measured": 40.80,
-        "status": "CUT",
-        "wear": 85,
-        "uses": 1,
-        "last_used": "2026-03-28"
-      },
-      "rotation_history": [],
-      "notes": "Batch B12, CRC"
-    }
-  },
+  <!-- CALCULATOR CARD -->
+  <section class="card collapsible expanded">
+    <div class="card-header">
+      <h2>Gearing & Rollout</h2>
+      <span class="collapse-arrow">▼</span>
+    </div>
 
-  "history": [
-    {
-      "racer": "William",
-      "set_id": "12",
-      "side": "LH",
-      "date": "2026-03-28",
-      "event": "Club Night",
-      "track": "CRC Black Carpet",
-      "grip": "High",
-      "rotation": "None",
-      "notes": "Stable, slight push mid-corner"
-    }
-  ]
-}
+    <div class="card-content">
+
+      <!-- RACER + TIRE SET INTEGRATION -->
+      <div class="input-row inline">
+        <label>Racer
+          <select id="calcRacerSelect"></select>
+        </label>
+
+        <label>Tire Set
+          <select id="calcTireSetSelect"></select>
+        </label>
+
+        <label>Tire Side
+          <select id="calcTireSideSelect">
+            <option value="LH">LH</option>
+            <option value="RH">RH</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- CORE CALCULATOR INPUTS -->
+      <div class="input-row inline" style="margin-top: 10px;">
+        <label>Spur
+          <input type="number" id="spur" step="1">
+        </label>
+
+        <label>Pinion
+          <input type="number" id="pinion" step="1">
+        </label>
+
+        <label>Tire Diameter (mm)
+          <input type="number" id="tire" step="0.01">
+          <span id="tireManualIndicator" style="font-size:0.75rem;color:#aaa;margin-top:2px;"></span>
+        </label>
+
+        <label>Tire Diameter (in)
+          <span id="tireConverted"></span>
+        </label>
+
+        <label>Desired Rollout (in)
+          <input type="number" id="desiredRollout" step="0.001">
+        </label>
+
+        <label>Car
+          <select id="car">
+            <option value="a12x">A12X</option>
+            <option value="generic">Generic</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- TEETH RANGE + CENTER BUTTON -->
+      <div style="margin-top:10px; display:flex; align-items:center; gap:10px;">
+        <span id="teethRange"></span>
+        <button id="centerBtn">Center on Current Gearing</button>
+      </div>
+
+      <!-- LOCAL GEARING MAP -->
+      <div class="scroll-container" style="margin-top:10px;">
+        <table id="localTable">
+          <thead>
+            <tr id="localHeadRow"></tr>
+          </thead>
+          <tbody id="localBody"></tbody>
+        </table>
+      </div>
+
+      <!-- RECOMMENDED GEARING -->
+      <h3 style="margin-top:16px;">Recommended Gearing</h3>
+      <div class="scroll-container">
+        <table id="recommended">
+          <thead>
+            <tr>
+              <th>Spur</th>
+              <th>Pinion</th>
+              <th>Total Teeth</th>
+              <th>Rollout (in)</th>
+              <th>Δ from Desired</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
