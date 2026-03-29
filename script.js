@@ -1,6 +1,6 @@
 /******************************************************
- *  ROLLOUT CALCULATOR — FULL ENHANCED VERSION
- *  Part 2 — Core Helpers + Dual‑Unit Engine
+ *  ROLLOUT CALCULATOR — FULL REGENERATED VERSION
+ *  PART 2 — Core Helpers + Dual‑Unit Engine
  ******************************************************/
 
 // =========================
@@ -34,23 +34,35 @@ function inToMm(inches) {
 }
 
 // =========================
-// DUAL‑UNIT FORMATTER (A1 + S1)
+// DUAL‑UNIT FORMATTERS
 // =========================
 //
-// Returns HTML with stacked units:
-//   3.639 in
-//   92.41 mm   (subtle secondary text)
+// 1) formatDualUnitsInput() → shows units (for inputs)
+// 2) formatDualUnitsGrid()  → NO units (for grid + recommended table)
 //
 
-function formatDualUnits(inches) {
+// For inputs (tire + desired rollout)
+function formatDualUnitsInput(inches) {
+  if (inches == null || isNaN(inches)) return { primary: "", secondary: "" };
+
+  const mm = inToMm(inches);
+
+  return {
+    primary: `${inches.toFixed(3)} in`,
+    secondary: `${mm.toFixed(2)} mm`
+  };
+}
+
+// For grid + recommended table (NO units)
+function formatDualUnitsGrid(inches) {
   if (inches == null || isNaN(inches)) return "";
 
   const mm = inToMm(inches);
 
   return `
     <div class="dual-unit-cell">
-      <div class="primary-unit">${inches.toFixed(3)} in</div>
-      <div class="secondary-unit">${mm.toFixed(2)} mm</div>
+      <div class="primary-unit">${inches.toFixed(3)}</div>
+      <div class="secondary-unit">${mm.toFixed(2)}</div>
     </div>
   `;
 }
@@ -72,9 +84,15 @@ function totalTeeth(spur, pinion) {
   return spur + pinion;
 }
 
+// =========================
+// CAR TEETH RANGE (A12X FIXED)
+// =========================
+
 function getCarTeethRange(car) {
-  if (car === "a12x") return { min: 112, max: 125 };
-  return { min: 90, max: 140 };
+  if (car === "a12x") {
+    return { min: 112, max: 125 };   // Correct A12X range
+  }
+  return { min: 90, max: 140 };      // Generic fallback
 }
 
 // =========================
@@ -91,7 +109,6 @@ function interpretDualUnitInput(rawValue) {
   if (isNaN(v)) return { inches: null, mm: null, mode: null };
 
   if (v < 10) {
-    // User entered inches
     return {
       inches: v,
       mm: inToMm(v),
@@ -99,7 +116,6 @@ function interpretDualUnitInput(rawValue) {
     };
   }
 
-  // User entered mm
   return {
     inches: mmToIn(v),
     mm: v,
@@ -118,7 +134,7 @@ function updateTireDualDisplay() {
 
   if (!raw || !outPrimary || !outSecondary) return;
 
-  const { inches, mm, mode } = interpretDualUnitInput(raw);
+  const { inches, mm } = interpretDualUnitInput(raw);
 
   if (inches == null) {
     outPrimary.textContent = "";
@@ -126,11 +142,9 @@ function updateTireDualDisplay() {
     return;
   }
 
-  // Primary = inches
-  outPrimary.textContent = `${inches.toFixed(3)} in`;
-
-  // Secondary = mm (subtle)
-  outSecondary.textContent = `${mm.toFixed(2)} mm`;
+  const f = formatDualUnitsInput(inches);
+  outPrimary.textContent = f.primary;
+  outSecondary.textContent = f.secondary;
 }
 
 function markTireManualOverride() {
@@ -157,7 +171,7 @@ function updateDesiredDualDisplay() {
 
   if (!raw || !primary || !secondary) return;
 
-  const { inches, mm, mode } = interpretDualUnitInput(raw);
+  const { inches } = interpretDualUnitInput(raw);
 
   if (inches == null) {
     primary.textContent = "";
@@ -165,11 +179,9 @@ function updateDesiredDualDisplay() {
     return;
   }
 
-  // Primary = inches
-  primary.textContent = `${inches.toFixed(3)} in`;
-
-  // Secondary = mm
-  secondary.textContent = `${mm.toFixed(2)} mm`;
+  const f = formatDualUnitsInput(inches);
+  primary.textContent = f.primary;
+  secondary.textContent = f.secondary;
 }
 
 // =========================
@@ -262,13 +274,13 @@ function setupCalculatorInputs() {
  *  PART 3 — LOCAL GEARING MAP + NAVIGATION
  ******************************************************/
 
-// Range constants
+// Grid ranges
 const MIN_SPUR = 60;
 const MAX_SPUR = 80;
 const MIN_PINION = 40;
 const MAX_PINION = 60;
 
-// Track current + cursor positions
+// Default gearing (locked in)
 let currentSpur = 66;
 let currentPinion = 50;
 let cursorSpur = 66;
@@ -319,7 +331,8 @@ function buildLocalTable() {
       const rolloutIn = computeRollout(s, p, tireMm);
 
       if (rolloutIn != null) {
-        td.innerHTML = formatDualUnits(rolloutIn);
+        // NO UNITS — stacked numbers only
+        td.innerHTML = formatDualUnitsGrid(rolloutIn);
       } else {
         td.textContent = "";
       }
@@ -518,11 +531,11 @@ function buildRecommendedTable() {
     const tdTotal = document.createElement("td");
     tdTotal.textContent = r.total;
 
-    // Rollout (dual‑unit stacked)
+    // Rollout (stacked numbers, NO units)
     const tdRollout = document.createElement("td");
-    tdRollout.innerHTML = formatDualUnits(r.rolloutIn);
+    tdRollout.innerHTML = formatDualUnitsGrid(r.rolloutIn);
 
-    // Delta (inches only — industry standard)
+    // Delta (inches only — numeric)
     const tdDelta = document.createElement("td");
     if (r.delta == null) {
       tdDelta.textContent = "";
