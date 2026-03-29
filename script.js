@@ -418,3 +418,15 @@ update();
 cursorSpur = parseInt(spurEl.value, 10);
 cursorPinion = parseInt(pinionEl.value, 10);
 buildLocalTable();
+
+// FULL SCRIPT.JS CONTENT (same as previously provided)
+// + collapsible card JS added at bottom
+
+// ... [existing script.js content unchanged] ...
+
+// COLLAPSIBLE CARDS
+document.querySelectorAll(".collapsible .card-header").forEach(header => {
+  header.addEventListener("click", () => {
+    header.parentElement.classList.toggle("collapsed");
+  });
+});
