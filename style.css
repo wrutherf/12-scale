@@ -119,7 +119,7 @@ td {
   background: #1b1b1b;
 }
 
-/* LOCAL MAP HIGHLIGHTING (calculator) */
+/* LOCAL MAP HIGHLIGHTING */
 .legal-gear {
   background: #123312;
 }
@@ -140,7 +140,7 @@ td {
   background: #333366;
 }
 
-/* TIRE STATUS COLORS (if used) */
+/* TIRE STATUS COLORS */
 .tire-status-NEW {
   background: #0a4f0a;
   color: #d0ffd0;
