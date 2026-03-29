@@ -6,6 +6,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
   <header>
     <h1>Rollout Calculator</h1>
     <nav>
@@ -13,45 +14,59 @@
     </nav>
   </header>
 
-  <main>
-    <!-- INPUT CARD -->
-    <section class="card">
+  <!-- INPUTS CARD -->
+  <section class="card collapsible expanded">
+    <div class="card-header">
       <h2>Inputs</h2>
-      <div class="input-row">
-        <label>
-          Spur
-          <input type="number" id="spur" value="80">
+      <span class="collapse-arrow">▼</span>
+    </div>
+    <div class="card-content">
+      <div class="input-row inline">
+        <label>Spur
+          <input type="number" id="spur" value="66">
         </label>
-        <label>
-          Pinion
-          <input type="number" id="pinion" value="40">
+        <label>Pinion
+          <input type="number" id="pinion" value="50">
         </label>
-      </div>
-      <div class="input-row">
-        <label>
-          Tire Diameter
+        <label>Tire Diameter
           <input type="number" id="tire" value="40.00" step="0.01">
           <div id="tireConverted" class="converted"></div>
         </label>
-        <label>
-          Car
+        <label>Car
           <select id="car">
             <option value="a12">A12</option>
             <option value="a12x">A12X</option>
           </select>
-          <div class="teeth-range">
-            Teeth Range: <span id="teethRange"></span>
-          </div>
+          <div class="teeth-range">Teeth Range: <span id="teethRange"></span></div>
         </label>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- LOCAL TABLE CARD -->
-    <section class="card">
-      <div class="local-header">
-        <h2>Local Gearing Map (Cursor‑Centered)</h2>
-        <button id="centerBtn" class="center-btn">Center on Current Gearing</button>
+  <!-- TARGET ROLLOUT CARD -->
+  <section class="card collapsible expanded">
+    <div class="card-header">
+      <h2>Target Rollout</h2>
+      <span class="collapse-arrow">▼</span>
+    </div>
+    <div class="card-content">
+      <div class="input-row inline">
+        <label>Desired Rollout
+          <input type="number" id="desiredRollout" step="0.01">
+        </label>
       </div>
+    </div>
+  </section>
+
+  <!-- LOCAL GEARING MAP CARD -->
+  <section class="card collapsible expanded">
+    <div class="card-header">
+      <h2>Local Gearing Map</h2>
+      <span class="collapse-arrow">▼</span>
+    </div>
+    <div class="card-content">
+      <button id="centerBtn" class="center-btn">Center on Current Gearing</button>
+
       <div class="local-scroll">
         <table id="localTable">
           <thead>
@@ -62,25 +77,18 @@
           <tbody id="localBody"></tbody>
         </table>
       </div>
-      <p class="hint">
-        Use arrow keys to move the cursor. Press Enter or click a cell to commit gearing.
-      </p>
-    </section>
 
-    <!-- TARGET ROLLOUT CARD -->
-    <section class="card">
-      <h2>Target Rollout</h2>
-      <div class="input-row">
-        <label>
-          Desired Rollout
-          <input type="number" id="desiredRollout" step="0.01">
-        </label>
-      </div>
-    </section>
+      <p class="hint">Use arrow keys to move the cursor. Press Enter or click a cell to commit gearing.</p>
+    </div>
+  </section>
 
-    <!-- RECOMMENDED CARD -->
-    <section class="card">
-      <h2>Recommended Gearing (Closest to Desired Rollout)</h2>
+  <!-- RECOMMENDED GEARING CARD -->
+  <section class="card collapsible expanded">
+    <div class="card-header">
+      <h2>Recommended Gearing</h2>
+      <span class="collapse-arrow">▼</span>
+    </div>
+    <div class="card-content">
       <div class="scroll-container">
         <table id="recommended">
           <thead>
@@ -95,8 +103,8 @@
           <tbody></tbody>
         </table>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
 
   <script src="script.js"></script>
 </body>
