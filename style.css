@@ -50,7 +50,6 @@ header {
   transition: transform 0.5s ease;
 }
 
-/* COLLAPSED STATE */
 .card.collapsed .collapse-arrow {
   transform: rotate(-90deg);
 }
@@ -72,7 +71,7 @@ header {
   padding-bottom: 0;
 }
 
-/* INLINE INPUT ROW */
+/* INLINE INPUT ROW (for calculator page if used) */
 .input-row.inline {
   display: flex;
   gap: 20px;
@@ -86,133 +85,41 @@ label {
 }
 
 input,
-select {
+select,
+textarea {
   background: #222;
   color: #fff;
   border: 1px solid #444;
   padding: 6px;
   border-radius: 6px;
-  width: 90px;
 }
 
-.converted {
-  font-size: 0.8rem;
-  color: #bbb;
-  margin-top: 4px;
+textarea {
+  min-height: 60px;
 }
 
-.teeth-range {
-  margin-top: 4px;
-  font-size: 0.8rem;
-  color: #ccc;
-}
-
-/* LOCAL TABLE */
-.local-scroll {
-  border: 1px solid #333;
-  border-radius: 8px;
-  overflow: auto;
-}
-
-#localTable {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-#localTable th,
-#localTable td {
-  border: 1px solid #333;
-  padding: 8px 10px;
-  text-align: center;
-  background: #1b1b1b;
-}
-
-/* Sticky headers */
-#localTable thead th {
-  position: sticky;
-  top: 0;
-  background: #222;
-  z-index: 20;
-}
-
-#localTable td:first-child,
-#localTable th.sticky-corner {
-  position: sticky;
-  left: 0;
-  background: #222;
-  z-index: 25;
-}
-
-/* COLOR CODING */
-.current-gear {
-  background: #00ff00 !important;
-  color: #000 !important;
-  font-weight: bold;
-}
-
-.legal-gear {
-  background: #0a4f0a;
-  color: #d0ffd0;
-}
-
-.illegal-gear {
-  background: #1a1a1a;
-  color: #666;
-}
-
-.cursor-cell {
-  outline: 2px solid #00aaff;
-  outline-offset: -2px;
-}
-
-.header-highlight {
-  background: #2d5f2d !important;
-  color: #d8ffd8 !important;
-}
-
-/* RECOMMENDED TABLE */
+/* TABLES */
 .scroll-container {
-  max-height: 350px;
+  max-height: 400px;
   overflow: auto;
   border: 1px solid #333;
   border-radius: 8px;
 }
 
-#recommended {
+table {
   width: 100%;
   border-collapse: collapse;
 }
 
-#recommended th,
-#recommended td {
+th,
+td {
   border: 1px solid #333;
   padding: 6px 10px;
   text-align: center;
   background: #1b1b1b;
 }
 
-/* BUTTON */
-.center-btn {
-  background: #333;
-  color: #eee;
-  border: 1px solid #555;
-  border-radius: 999px;
-  padding: 6px 14px;
-  cursor: pointer;
-  margin-bottom: 10px;
-}
-
-.center-btn:hover {
-  background: #444;
-}
-
-/* HINT */
-.hint {
-  font-size: 0.8rem;
-  color: #aaa;
-}
-
-/* TIRE STATUS COLORS */
+/* TIRE STATUS COLORS (for simple status if needed) */
 .tire-status-NEW {
   background: #0a4f0a;
   color: #d0ffd0;
@@ -233,20 +140,9 @@ select {
   color: #ffd0d0;
 }
 
-.tire-status-AUTO {
-  /* no special background */
-}
-
-.tire-status-select {
-  background: #222;
-  color: #eee;
-  border: 1px solid #444;
-  border-radius: 6px;
-  padding: 4px;
-  font-size: 0.8rem;
-}
-
-.tire-toolbar {
+/* TIRE TOOLBARS */
+.tire-toolbar,
+.tire-history-toolbar {
   display: flex;
   gap: 10px;
   margin-bottom: 10px;
@@ -254,7 +150,8 @@ select {
 }
 
 .tire-toolbar button,
-.tire-toolbar label input[type="file"] {
+.tire-toolbar label,
+.tire-history-toolbar label {
   background: #333;
   color: #eee;
   border: 1px solid #555;
@@ -264,57 +161,77 @@ select {
   font-size: 0.8rem;
 }
 
-.tire-toolbar button:hover {
+.tire-toolbar button:hover,
+.tire-history-toolbar label:hover {
   background: #444;
 }
-/* TIRE STATUS COLORS */
-.tire-status-NEW {
-  background: #0a4f0a;
-  color: #d0ffd0;
-}
 
-.tire-status-CUT {
-  background: #003f7f;
-  color: #d0e8ff;
-}
-
-.tire-status-OLD {
-  background: #7f6a00;
-  color: #fff4c2;
-}
-
-.tire-status-DO_NOT_USE {
-  background: #5f0000;
-  color: #ffd0d0;
-}
-
-.tire-status-select {
+.tire-toolbar label input,
+.tire-history-toolbar label input,
+.tire-toolbar label select,
+.tire-history-toolbar label select {
+  margin-top: 4px;
+  border-radius: 6px;
+  border: 1px solid #444;
   background: #222;
   color: #eee;
-  border: 1px solid #444;
-  border-radius: 6px;
-  padding: 4px;
-  font-size: 0.8rem;
 }
 
-.tire-toolbar {
+/* MODALS */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 
-.tire-toolbar button,
-.tire-toolbar label {
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: #1b1b1b;
+  border-radius: 10px;
+  padding: 20px;
+  width: 320px;
+  max-width: 90vw;
+  border: 1px solid #444;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.modal-actions button {
   background: #333;
   color: #eee;
   border: 1px solid #555;
   border-radius: 999px;
   padding: 6px 14px;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
 }
 
-.tire-toolbar button:hover {
+.modal-actions button.secondary {
+  background: #222;
+}
+
+.modal-actions button:hover {
   background: #444;
+}
+
+/* SMALL UTILS */
+button {
+  font-family: inherit;
 }
