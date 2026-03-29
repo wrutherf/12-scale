@@ -14,17 +14,26 @@
     </nav>
   </header>
 
-  <section class="card">
+  <section class="card collapsible expanded">
     <div class="card-header">
-      <h2>Tire Conversion Table</h2>
+      <h2>Tire Conversion & Status</h2>
       <span class="collapse-arrow">▼</span>
     </div>
 
     <div class="card-content">
-      <div class="tire-search">
+      <div class="tire-toolbar">
         <label>Filter
           <input type="text" id="tireFilter" placeholder="e.g. 40.3">
         </label>
+
+        <button id="exportTireJson">Export JSON</button>
+
+        <label>
+          Import JSON
+          <input type="file" id="importTireJson" accept="application/json" style="display:none;">
+        </label>
+
+        <button id="resetTireOverrides">Reset Overrides</button>
       </div>
 
       <div class="scroll-container">
@@ -33,37 +42,17 @@
             <tr>
               <th>Diameter (mm)</th>
               <th>Diameter (in)</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            <!-- table rows unchanged -->
+            <!-- rows built by JS -->
           </tbody>
         </table>
       </div>
     </div>
   </section>
 
-  <script>
-    // collapse behavior
-    document.querySelectorAll(".collapsible .card-header").forEach(header => {
-      header.addEventListener("click", () => {
-        header.parentElement.classList.toggle("collapsed");
-      });
-    });
-
-    // filter logic
-    const tireFilter = document.getElementById("tireFilter");
-    const tireTableBody = document.querySelector("#tireTable tbody");
-
-    tireFilter.addEventListener("input", () => {
-      const q = tireFilter.value.trim().toLowerCase();
-      Array.from(tireTableBody.rows).forEach(row => {
-        const mm = row.cells[0].textContent.toLowerCase();
-        const inch = row.cells[1].textContent.toLowerCase();
-        row.style.display = (!q || mm.includes(q) || inch.includes(q)) ? "" : "none";
-      });
-    });
-  </script>
-
+  <script src="script.js"></script>
 </body>
 </html>
