@@ -14,7 +14,9 @@
     </nav>
   </header>
 
-  <!-- CALCULATOR CARD -->
+  <!-- ========================= -->
+  <!-- GEARS & ROLLOUT CALCULATOR -->
+  <!-- ========================= -->
   <section class="card collapsible expanded">
     <div class="card-header">
       <h2>Gearing & Rollout</h2>
@@ -60,10 +62,6 @@
           <span id="tireConverted"></span>
         </label>
 
-        <label>Desired Rollout (in)
-          <input type="number" id="desiredRollout" step="0.001">
-        </label>
-
         <label>Car
           <select id="car">
             <option value="a12x">A12X</option>
@@ -88,9 +86,27 @@
         </table>
       </div>
 
-      <!-- RECOMMENDED GEARING -->
-      <h3 style="margin-top:16px;">Recommended Gearing</h3>
-      <div class="scroll-container">
+    </div>
+  </section>
+
+  <!-- ========================= -->
+  <!-- TARGET ROLLOUT + RECOMMENDED -->
+  <!-- ========================= -->
+  <section class="card collapsible expanded">
+    <div class="card-header">
+      <h2>Target Rollout & Recommendations</h2>
+      <span class="collapse-arrow">▼</span>
+    </div>
+
+    <div class="card-content">
+
+      <div class="input-row inline">
+        <label>Desired Rollout (in)
+          <input type="number" id="desiredRollout" step="0.001">
+        </label>
+      </div>
+
+      <div class="scroll-container" style="margin-top:10px;">
         <table id="recommended">
           <thead>
             <tr>
@@ -110,4 +126,4 @@
 
   <script src="script.js"></script>
 </body>
-</html> 
+</html>
