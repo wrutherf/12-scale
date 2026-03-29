@@ -7,22 +7,13 @@ body {
   padding: 20px;
 }
 
-header h1 {
-  margin: 0;
-}
-
 header {
-  margin-bottom: 16px;
-}
-
-nav {
-  margin-top: 8px;
+  margin-bottom: 20px;
 }
 
 .nav-link {
   color: #7fbfff;
   text-decoration: none;
-  font-size: 0.9rem;
 }
 
 .nav-link:hover {
@@ -32,133 +23,124 @@ nav {
 /* CARDS */
 .card {
   background: #1b1b1b;
-  padding: 16px;
-  margin: 0 auto 20px auto;
   border-radius: 10px;
-  width: 100%;
-  max-width: 900px;
-  box-sizing: border-box;
+  margin-bottom: 20px;
+  overflow: hidden;
+  border: 1px solid #333;
 }
 
-.input-row {
+/* COLLAPSIBLE HEADER */
+.card-header {
+  background: #222;
+  padding: 12px 16px;
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.card-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.collapse-arrow {
+  font-size: 1.2rem;
+  transition: transform 0.5s ease;
+}
+
+/* COLLAPSED STATE */
+.card.collapsed .collapse-arrow {
+  transform: rotate(-90deg);
+}
+
+.card-content {
+  padding: 16px;
+  opacity: 1;
+  max-height: 2000px;
+  overflow: hidden;
+  transition:
+    max-height 0.5s ease,
+    opacity 0.5s ease;
+}
+
+.card.collapsed .card-content {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* INLINE INPUT ROW */
+.input-row.inline {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
 label {
   display: flex;
   flex-direction: column;
-  width: 100%;
+  font-size: 0.9rem;
 }
 
 input,
 select {
-  padding: 6px;
   background: #222;
   color: #fff;
   border: 1px solid #444;
+  padding: 6px;
   border-radius: 6px;
+  width: 90px;
 }
 
-.teeth-range {
-  margin-top: 6px;
-  font-size: 0.85rem;
-  color: #ccc;
-}
-
-/* CONVERTED UNIT TEXT */
 .converted {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #bbb;
   margin-top: 4px;
 }
 
-/* LOCAL TABLE HEADER + CENTER BUTTON */
-.local-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 12px;
-  margin-bottom: 8px;
-}
-
-.center-btn {
-  background: #333;
-  color: #eee;
-  border: 1px solid #555;
-  border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.center-btn:hover {
-  background: #444;
-}
-
-/* LOCAL TABLE CONTAINER */
-.local-scroll {
-  width: 100%;
-  max-width: 100%;
-  border: 1px solid #333;
-  border-radius: 8px;
-  box-sizing: border-box;
-  overflow: hidden;
+.teeth-range {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: #ccc;
 }
 
 /* LOCAL TABLE */
+.local-scroll {
+  border: 1px solid #333;
+  border-radius: 8px;
+  overflow: auto;
+}
+
 #localTable {
   border-collapse: collapse;
-  margin: 0 auto;
+  width: 100%;
 }
 
 #localTable th,
 #localTable td {
-  padding: 10px 14px;
   border: 1px solid #333;
+  padding: 8px 10px;
   text-align: center;
-  white-space: nowrap;
   background: #1b1b1b;
-  font-size: 0.9rem;
 }
 
-/* Sticky header row */
+/* Sticky headers */
 #localTable thead th {
   position: sticky;
   top: 0;
+  background: #222;
   z-index: 20;
 }
 
-/* Sticky left column */
 #localTable td:first-child,
 #localTable th.sticky-corner {
   position: sticky;
   left: 0;
-  z-index: 15;
-}
-
-/* Top-left corner cell */
-#localTable th.sticky-corner {
-  z-index: 30;
-}
-
-/* CELL CONTENT (DUAL UNIT) */
-.cell-rollout {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.1;
-}
-
-.cell-rollout .metric {
-  font-size: 0.95rem;
-}
-
-.cell-rollout .imperial {
-  font-size: 0.8rem;
-  color: #ccc;
+  background: #222;
+  z-index: 25;
 }
 
 /* COLOR CODING */
@@ -178,26 +160,17 @@ select {
   color: #666;
 }
 
-/* Cursor cell (preview) */
 .cursor-cell {
   outline: 2px solid #00aaff;
   outline-offset: -2px;
 }
 
-/* Header highlight for selected spur/pinion */
 .header-highlight {
   background: #2d5f2d !important;
   color: #d8ffd8 !important;
-  font-weight: bold;
 }
 
-/* RECOMMENDED TABLE (no highlight) */
-#recommended tr {
-  background: #1b1b1b;
-  color: #eee;
-}
-
-/* SCROLL CONTAINERS */
+/* RECOMMENDED TABLE */
 .scroll-container {
   max-height: 350px;
   overflow: auto;
@@ -205,33 +178,36 @@ select {
   border-radius: 8px;
 }
 
-#recommended,
-#tireTable {
+#recommended {
   width: 100%;
   border-collapse: collapse;
 }
 
 #recommended th,
-#recommended td,
-#tireTable th,
-#tireTable td {
-  padding: 6px 10px;
+#recommended td {
   border: 1px solid #333;
+  padding: 6px 10px;
   text-align: center;
+  background: #1b1b1b;
 }
 
-/* MISC */
-.hint {
-  font-size: 0.8rem;
-  color: #aaa;
-  margin-top: 8px;
-}
-
-/* TIRE PAGE SEARCH */
-.tire-search {
+/* BUTTON */
+.center-btn {
+  background: #333;
+  color: #eee;
+  border: 1px solid #555;
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
   margin-bottom: 10px;
 }
 
-.tire-search input {
-  width: 200px;
+.center-btn:hover {
+  background: #444;
+}
+
+/* HINT */
+.hint {
+  font-size: 0.8rem;
+  color: #aaa;
 }
