@@ -365,7 +365,9 @@ function buildLocalTable() {
         $("pinion").value = p;
 
         buildLocalTable();
-        buildRecommendedTable();
+scrollCursorIntoView();
+buildRecommendedTable();
+
       });
 
       tr.appendChild(td);
@@ -440,14 +442,17 @@ function setupKeyboardNavigation() {
       $("pinion").value = currentPinion;
 
       buildLocalTable();
-      buildRecommendedTable();
+scrollCursorIntoView();
+buildRecommendedTable();
+
       return;
     }
-
     if (moved) {
-      e.preventDefault();
-      buildLocalTable();
-    }
+  e.preventDefault();
+  buildLocalTable();
+  scrollCursorIntoView();
+}
+
   });
 }
 
@@ -570,7 +575,9 @@ function buildRecommendedTable() {
       $("pinion").value = r.pinion;
 
       buildLocalTable();
-      buildRecommendedTable();
+scrollCursorIntoView();
+buildRecommendedTable();
+
     });
 
     tbody.appendChild(tr);
@@ -739,7 +746,9 @@ function applySelectedTireToCalculator() {
   updateTireDualDisplay();
   markTireManualOverride();
   buildLocalTable();
-  buildRecommendedTable();
+scrollCursorIntoView();
+buildRecommendedTable();
+
 }
 
 // =========================
@@ -785,7 +794,27 @@ async function initApp() {
   updateDesiredDualDisplay();
   updateTeethRangeDisplay();
   buildLocalTable();
-  buildRecommendedTable();
+scrollCursorIntoView();
+buildRecommendedTable();
+
 }
 
 document.addEventListener("DOMContentLoaded", initApp);
+function scrollCursorIntoView() {
+  const container = document.querySelector(".scroll-container");
+  if (!container) return;
+
+  const cell = container.querySelector(
+    `td[data-spur="${cursorSpur}"][data-pinion="${cursorPinion}"]`
+  );
+  if (!cell) return;
+
+  const cellRect = cell.getBoundingClientRect();
+  const contRect = container.getBoundingClientRect();
+
+  const offsetX = cellRect.left - contRect.left - contRect.width / 2 + cellRect.width / 2;
+  const offsetY = cellRect.top - contRect.top - contRect.height / 2 + cellRect.height / 2;
+
+  container.scrollLeft += offsetX;
+  container.scrollTop += offsetY;
+}
